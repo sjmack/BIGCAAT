@@ -39,4 +39,22 @@ MSABalleles$GFE<-hlaABdf$gfes[match(paste(MSABalleles$locus, MSABalleles$MSallel
 
 
 
+## Generic Function dealing with multiple files
+
+ MyFunction <- function(fileDir,boolParam=TRUE,textParam="sometext",optionalParam){
+  
+  combiFile <- multiFileMerge(fileDir)
+  View(combiFile[1:10,])
+  View(combiFile[5000:5010,])
+  
+ }
+ 
+ ## From: https://www.r-bloggers.com/merging-multiple-data-files-into-one-data-frame/
+ ## Will merge all of the files in mypath/ assuming that they are the same filetype and have common headers 
+multiFileMerge <- function(mypath){
+   filenames=list.files(path=mypath, full.names=TRUE)
+   datalist = lapply(filenames, function(x){read.csv(file=x,header=FALSE, stringsAsFactors=FALSE, skip=3,col.names = c("allelename", "gfes"))})
+   Reduce(function(x,y) {merge(x,y,all=TRUE)}, datalist) 
+   }
+
 
