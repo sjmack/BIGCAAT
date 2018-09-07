@@ -11,13 +11,15 @@ filemerge <- function(filepath, columnnames, skip, clip){
   datalist<-head(datalist,nrow(datalist)-(clip*length(filenames)))
   return(datalist)}
 
-#for cwd pairing 
-CWDrestriction <- function(allelelistFile,cwdFile,gfeDirPath) {
+#for common, well-documented allele identification 
+cwdID <- function(allelelistFile,gfeDirPath) {
   hlaacc<-read.csv(allelelistFile, header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
   hladf<-filemerge(gfeDirPath, c("allelename", "gfe"), skip=3, clip=1)
   hladf$alleleID<-hlaacc$AlleleID[match(hladf$allelename, paste("HLA",hlaacc$Allele,sep="-"))] 
-  hladf$CWD<-ifelse(hladf$alleleID %in% (read.table(cwdFile,sep="\t",header = TRUE,stringsAsFactors = FALSE,skip = 1)$IMGT.HLA.Accession.Number), "CWD", "NON-CWD")
+  cwdalleles<-CWDverify()
+  hladf$CWD<-ifelse(hladf$alleleID %in% cwdalleles$Accession, "CWD", "NON-CWD")
   return(hladf)}
+
 
 #for MS allele GFE matching -- hlamerged previously defined by CWDrestriction
 gfematch <- function(allelefiles,cwddata,gfepath, experimentaldata){
@@ -32,8 +34,8 @@ gfematch <- function(allelefiles,cwddata,gfepath, experimentaldata){
   return(msmerged)}
 
 #for multi-loci GFE genotype matching 
-GenotypeGFEmatch <- function(allelefiles,cwddata,gfepath, genotypedatafiles){
-  hlamerged<-CWDrestriction(allelefiles,cwddata,gfepath)
+GenotypeGFEmatch <- function(allelefiles,cwddata, gfepath, genotypedatafiles){
+  hlamerged<-CWDrestriction(allelefiles,CWDverify(),gfepath)
   hlafields<-strsplit(t(as.data.frame(matrix(unlist(strsplit(hlamerged[,1],"\\*")), nrow=nrow(hlamerged), byrow=T), stringsAsFactors=FALSE)) [2,],":")
   genodata<-filemerge(genotypedatafiles, "genodata" , 0, 0)
   genofields<-strsplit(t(as.data.frame(matrix(unlist(strsplit(genodata[,1],"\\*")), nrow=nrow(genodata), byrow=T), stringsAsFactors=FALSE)) [2,],":")
@@ -67,5 +69,5 @@ return(bigdawghladata)
 
 
 setwd("/Users/liviatran/Desktop/ltmasterscoding")
-View(BDgenotypeconversion("/Users/liviatran/Desktop/ltmasterscoding/HLA", "/Users/liviatran/Desktop/ltmasterscoding/hladata.txt", "Allelelist.3310.txt","cwd200_alleles.txt"))
+View(BDgenotypeconversion("/Users/liviatran/Desktop/ltmasterscoding/HLA", "samplebdHLA.csv", "Allelelist.3310.txt","cwd200_alleles.txt"))
 View(gfematch("Allelelist.3310.txt","cwd200_alleles.txt","/Users/liviatran/Desktop/ltmasterscoding/HLA","/Users/liviatran/Desktop/ltmasterscoding/MS"))
