@@ -5,7 +5,7 @@ BDgenotypeconversion<-function(gfeDirpath, genotypedata, allelefiles, cwdfiles){
           "txt" = bigdawghladata <- read.table(genotypedata, stringsAsFactors = F, header=T, sep="\t", check.names = FALSE), 
           "tsv" = bigdawghladata <- read.table(genotypedata, stringsAsFactors = F, header=T,sep="\t",check.names = FALSE), 
           print("Error: Unrecognized filename suffix."))}
-  hlamerged<-CWDrestriction(allelefiles, gfeDirpath)
+  hlamerged<-cwdID(allelefiles, gfeDirpath)
   hlafields<-strsplit(t(as.data.frame(matrix(unlist(strsplit(hlamerged[,1],"\\*")), nrow=nrow(hlamerged), byrow=T), stringsAsFactors=FALSE)) [2,],":")
   hlalist<-list()            
   for (i in 3:ncol(bigdawghladata)){
@@ -26,4 +26,3 @@ BDgenotypeconversion<-function(gfeDirpath, genotypedata, allelefiles, cwdfiles){
 ###samplebdHLA.csv is a csv version of the HLA_data set in BIGDAWG
 BDgenotypeconversion("/Users/liviatran/Desktop/ltmasterscoding/HLA", "samplebdHLA.csv", "Allelelist.3310.txt")
 
-warnings()
