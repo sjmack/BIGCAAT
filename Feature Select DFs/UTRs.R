@@ -1,3 +1,6 @@
+####Feature Sequence Isolation for UTR GFEs 
+
+
 ##see atlas.r, which contains positions for hand-picked sequence features
 load("atlas.rda")
 
@@ -114,6 +117,6 @@ UTRisolated[[loci[10]]]<-GFEpaster(UTRlist, 10, hlaDRB4df, hladf, 10, "HLA-DRB4*
 UTRisolated[[loci[11]]]<-GFEpaster(UTRlist, 11, hlaDRB5df, hladf, 11, "HLA-DRB5*00:00")
 
 
-
+View(UTRisolated[[1]])
 
 
