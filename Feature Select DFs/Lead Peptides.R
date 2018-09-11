@@ -1,4 +1,4 @@
-####Feature Sequence Isolation for Core Exon GFEs
+####Feature Sequence Isolation for Lead Peptide GFEs
 
 
 require(stringr)
@@ -72,7 +72,7 @@ colnames(hlaDRB5df)<-c("5'UTR", "Exon 1", "Intron 1","Exon 2","Intron 2","Exon 3
 
 ##prepares for building a list for UTR selected features for each loci
 loci<-c("HLA-A", "HLA-B", "HLA-C", "HLA-DPA1", "HLA-DPB1", "HLA-DQA1", "HLA-DQB1", "HLA-DRB1", "HLA-DRB3", "HLA-DRB4", "HLA-DRB5")
-CoreList<-list()
+LeadPeptideList<-list()
 
 #function to make zeroed out templates based on each loci - then fills in with appropriate information
 #based on coordinates of the atlas 
@@ -81,18 +81,18 @@ featureselect<-function(dataframe, x, y, GFEsplitDF){
   dataframe[,unlist(atlas[x,y])] <- GFEsplitDF[unlist(atlas[x,y])]
   return(dataframe)}
   
-  CoreList[[loci[1]]]<-featureselect(hlaAdf, 1,3, hlaAdf)
-  CoreList[[loci[2]]]<-featureselect(hlaBdf, 2,3, hlaBdf)
-  CoreList[[loci[3]]]<-featureselect(hlaCdf, 3,3, hlaCdf)
-  CoreList[[loci[4]]]<-featureselect(hlaDPA1df, 4,3, hlaDPA1df)
-  CoreList[[loci[5]]]<-featureselect(hlaDPB1df, 5,3, hlaDPB1df)
-  CoreList[[loci[6]]]<-featureselect(hlaDQA1df, 6,3, hlaDQA1df)
-  CoreList[[loci[7]]]<-featureselect(hlaDQB1df, 7,3, hlaDQB1df)
-  CoreList[[loci[8]]]<-featureselect(hlaDRB1df, 8,3, hlaDRB1df)
-  CoreList[[loci[9]]]<-featureselect(hlaDRB3df, 9,3, hlaDRB3df)
-  CoreList[[loci[10]]]<-featureselect(hlaDRB4df, 10, 3, hlaDRB4df)
-  CoreList[[loci[11]]]<-featureselect(hlaDRB5df, 11,3, hlaDRB5df)
-
+  LeadPeptideList[[loci[1]]]<-featureselect(hlaAdf, 1,5, hlaAdf)
+  LeadPeptideList[[loci[2]]]<-featureselect(hlaBdf, 2,5, hlaBdf)
+  LeadPeptideList[[loci[3]]]<-featureselect(hlaCdf, 3,5, hlaCdf)
+  LeadPeptideList[[loci[4]]]<-featureselect(hlaDPA1df, 4,5, hlaDPA1df)
+  LeadPeptideList[[loci[5]]]<-featureselect(hlaDPB1df, 5,5, hlaDPB1df)
+  LeadPeptideList[[loci[6]]]<-featureselect(hlaDQA1df, 6,5, hlaDQA1df)
+  LeadPeptideList[[loci[7]]]<-featureselect(hlaDQB1df, 7,5, hlaDQB1df)
+  LeadPeptideList[[loci[8]]]<-featureselect(hlaDRB1df, 8,5, hlaDRB1df)
+  LeadPeptideList[[loci[9]]]<-featureselect(hlaDRB3df, 9,5, hlaDRB3df)
+  LeadPeptideList[[loci[10]]]<-featureselect(hlaDRB4df, 10, 5, hlaDRB4df)
+  LeadPeptideList[[loci[11]]]<-featureselect(hlaDRB5df, 11,5, hlaDRB5df)
+  
   GFEpaster<-function(seqfeaturelist, seqfeatureposition, lociDF, BSGdf, BSGdfposition, zerolocus){
     seqfeaturelist[[seqfeatureposition]][nrow(seqfeaturelist[[seqfeatureposition]]) + 1,] = max(as.numeric(as.character(unlist(lociDF[,2:ncol(lociDF)]))))+1
     cols<- 1:length(seqfeaturelist[[seqfeatureposition]])
@@ -100,20 +100,21 @@ featureselect<-function(dataframe, x, y, GFEsplitDF){
     BSGdf[[BSGdfposition]][nrow(BSGdf[[BSGdfposition]]) + 1,] = list(zerolocus, NA)
     featureselectDF<-cbind(BSGdf[[BSGdfposition]][[1]], GFEs)
     return(featureselectDF)}
-
   
-
-#builds a new list based on previously defined loci -- list contains allele names and sequence feature specific GFE notations
-CoreIsolated<-list()
-CoreIsolated[[loci[1]]]<-GFEpaster(CoreList, 1, hlaAdf, hladf, 1, "HLA-A*00:00")
-CoreIsolated[[loci[2]]]<-GFEpaster(CoreList, 2, hlaBdf, hladf, 2, "HLA-B*00:00")
-CoreIsolated[[loci[3]]]<-GFEpaster(CoreList, 3, hlaCdf, hladf, 3, "HLA-C*00:00")
-CoreIsolated[[loci[4]]]<-GFEpaster(CoreList, 4, hlaDPA1df, hladf, 4, "HLA-DPA1*00:00")
-CoreIsolated[[loci[5]]]<-GFEpaster(CoreList, 5, hlaDPB1df, hladf, 5, "HLA-DPB1*00:00")
-CoreIsolated[[loci[6]]]<-GFEpaster(CoreList, 6, hlaDQA1df, hladf, 6, "HLA-DQA1*00:00")
-CoreIsolated[[loci[7]]]<-GFEpaster(CoreList, 7, hlaDQB1df, hladf, 7, "HLA-DQB1*00:00")
-CoreIsolated[[loci[8]]]<-GFEpaster(CoreList, 8, hlaDRB1df, hladf, 8, "HLA-DRB1*00:00")
-CoreIsolated[[loci[9]]]<-GFEpaster(CoreList, 9, hlaDRB3df, hladf, 9, "HLA-DRB3*00:00")
-CoreIsolated[[loci[10]]]<-GFEpaster(CoreList, 10, hlaDRB4df, hladf, 10, "HLA-DRB4*00:00")
-CoreIsolated[[loci[11]]]<-GFEpaster(CoreList, 11, hlaDRB5df, hladf, 11, "HLA-DRB5*00:00")  
-
+  
+  
+  #builds a new list based on previously defined loci -- list contains allele names and sequence feature specific GFE notations
+  LeadPepIsolated<-list()
+  LeadPepIsolated[[loci[1]]]<-GFEpaster(LeadPeptideList, 1, hlaAdf, hladf, 1, "HLA-A*00:00")
+  LeadPepIsolated[[loci[2]]]<-GFEpaster(LeadPeptideList, 2, hlaBdf, hladf, 2, "HLA-B*00:00")
+  LeadPepIsolated[[loci[3]]]<-GFEpaster(LeadPeptideList, 3, hlaCdf, hladf, 3, "HLA-C*00:00")
+  LeadPepIsolated[[loci[4]]]<-GFEpaster(LeadPeptideList, 4, hlaDPA1df, hladf, 4, "HLA-DPA1*00:00")
+  LeadPepIsolated[[loci[5]]]<-GFEpaster(LeadPeptideList, 5, hlaDPB1df, hladf, 5, "HLA-DPB1*00:00")
+  LeadPepIsolated[[loci[6]]]<-GFEpaster(LeadPeptideList, 6, hlaDQA1df, hladf, 6, "HLA-DQA1*00:00")
+  LeadPepIsolated[[loci[7]]]<-GFEpaster(LeadPeptideList, 7, hlaDQB1df, hladf, 7, "HLA-DQB1*00:00")
+  LeadPepIsolated[[loci[8]]]<-GFEpaster(LeadPeptideList, 8, hlaDRB1df, hladf, 8, "HLA-DRB1*00:00")
+  LeadPepIsolated[[loci[9]]]<-GFEpaster(LeadPeptideList, 9, hlaDRB3df, hladf, 9, "HLA-DRB3*00:00")
+  LeadPepIsolated[[loci[10]]]<-GFEpaster(LeadPeptideList, 10, hlaDRB4df, hladf, 10, "HLA-DRB4*00:00")
+  LeadPepIsolated[[loci[11]]]<-GFEpaster(LeadPeptideList, 11, hlaDRB5df, hladf, 11, "HLA-DRB5*00:00")  
+  
+  
