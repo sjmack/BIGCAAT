@@ -1,13 +1,17 @@
-##atlas formation 
-atlas <- data.frame(locus=c("HLA-A","HLA-B","HLA-C",
-                            "HLA-DPA1", "HLA-DPB1", "HLA-DQA1", "HLA-DQB1",
-                            "HLA-DRB1", "HLA-DRB3", "HLA-DRB4", "HLA-DRB5"),stringsAsFactors = FALSE)
+##atlas formation
+##version 2.0
+##By:Livia Tran 
+
+atlas<-data.frame(locus=names(framework))
+
 atlas$UTRS <- list(c(1,17),c(1,15),c(1,17),
                    c(1,9), c(1,11), c(1,9), c(1,13), 
                    c(1,13), c(1,13), c(1,13), c(1,13))
+
 atlas$core <- list(c(4,6),c(4,6),c(4,6),
                    4, 4, 4, 4,
                    4, 4, 4, 4)
+
 atlas$cytoexons <- list(c(12,14,16),c(12,14),c(12,14,16),
                         8, 10, 8, c(10, 12), 
                         c(10,12), c(10,12), c(10,12), c(10,12))
