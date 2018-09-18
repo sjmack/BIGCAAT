@@ -1,7 +1,7 @@
 ###Sequence Feature Isolation Function 
 #SequenceFeatIsolation()
 ##By: Livia Tran
-#V 1.0
+#V 1.1
 
 ###This function isolates pre-determined feature sequences for a given allele (in this case, HLA)
 #referenced by a user-made atlas, which is guided by a user-made framework containing information on
@@ -9,6 +9,22 @@
 #zeroing out all other fields. HLA data may be compared to these zeroed-out GFEs to obtain appropriate
 #GFE notations, depending on the feature sequence of interest. Analysis may then be carried out
 #by BIGDAWG to better understand distribution of categories and its effects on phenotypes (case or control).  
+
+###NECESSARY LIBRARIES
+require(stringr)
+require(BIGDAWG)
+
+
+###USER-MADE .RDA FILES
+
+#frameworks should consist of feature identifiers for each GFE field
+#the atlas should consist of positions for selected features within a GFE
+###these should ideally be saved as .rda files for easy reference
+#these should be loaded into the environment before the initiation of the function
+##loads cwdalleles, a list of updated CWD alleles, previously attained by CWDverify
+load("atlas.rda")
+load("framework.rda")
+load("cwdalleles.rda")
 
 
 ############NECESSARY FUNCTIONS to have in your environment in order for SequenceFeatIsolation() to work
@@ -57,11 +73,11 @@ CWDverify <- function(){
 }
 
 #for identifying common, well-documented alleles in HLA data
+#cwdalleles defined by a .rda file
 cwdID <- function(allelelistFile,gfefiles) {
   hlaacc<-read.csv(allelelistFile, header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
   hladf<-gfefiles
   hladf$alleleID<-hlaacc$AlleleID[match(hladf$allelename, paste("HLA",hlaacc$Allele,sep="-"))] 
-  cwdalleles<-CWDverify()
   hladf$CWD<-ifelse(hladf$alleleID %in% cwdalleles$Accession, "CWD", "NON-CWD")
   return(hladf)}
 
@@ -122,76 +138,68 @@ BDgenotypeconversion<-function(genotypedata, allelefiles, gfefiles){
     
     return(bigdawghladata)} else {print("Error: Unrecognized filename suffix. Stopping BDgenotypeconversion()")}}
 
-SequenceFeatIsolation("/Users/liviatran/Desktop/ltmasterscoding/HLA", HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")
-
-#frameworks should consist of feature identifiers for each GFE field
-#the atlas should consist of positions for selected features within a GFE
-###these should ideally be saved as .rda files for easy reference
-#these should be loaded into the environment before the initiation of the function
-
-load("atlas.rda")
-load("framework.rda")
 
 SequenceFeatIsolation<-function(GFE_HLAfiles, genotypedata, allelefiles){
-#necessary libraries for this function 
-require(stringr)
-require(BIGDAWG)
-
-#reads in HLA-GFE files from Bx12 Search Generator as a list
-#where each element in the list is an HLA locus with its own dataframe
-hladf<-multiFileread(GFE_HLAfiles, c("allelename", "gfe"), skip=3, clip=1)
-
-#splits GFE notations -- first at "w", then at "-"
-hlasplit<-lapply(hladf, function(x) strsplit(t(as.data.frame(matrix(unlist(strsplit(x[,2],"w")), nrow=nrow(x), byrow=T), stringsAsFactors=FALSE)) [2,],"-"))
-
-#loops through rows in atlas -- takes each row in "locus", and splits the coinciding allele,
-#forming a dataframe
-#inputs into a blank splitDFs list
-#field names, previously defined by framework, corresponds to HLA locus -- inserts 
-#appropriate names to splitDFs
-splitDFs<-list()
-for(i in 1:nrow(atlas)){
-  splitDFs[[atlas$locus[i]]]<-data.frame(matrix(unlist(hlasplit[i]), byrow=T, nrow=length(hlasplit[[i]])), stringsAsFactors = FALSE)
-  colnames(splitDFs[[atlas$locus[i]]])<-framework[[i]]}
-
-#makes an empty list of 8 total features, names of elements defined by
-#columnnames of the atlas
-seqfeatureslist <- sapply(colnames(atlas[,2:9]),function(x) NULL)
-
-#for loop for inputting sequence feature isolations for all loci in list format 
-for (k in 1:length(seqfeatureslist)) {
-  for (i in 1:nrow(atlas)){
-    seqfeatureslist[[k]][[atlas$locus[i]]]<-featureselect(i ,k+1, splitDFs[[i]])}
-}
-
-#makes an empty list of 8 total features, names of elements defined by atlas column names
-isolatedlist <- sapply(colnames(atlas[,2:9]),function(x) NULL)
-
-#for loop for pasting all sequence feature fields together
-#inputs into isolatedlist
-for(i in 1:nrow(atlas)){
-  for(k in 1:length(seqfeatureslist)){
-    isolatedlist[[k]][[atlas$locus[i]]]<-GFEpaster(seqfeatureslist[[k]], i, splitDFs[[i]], hladf, i, as.character(str_replace_all(paste(atlas$locus[i], "*00:00"), " ", "")))}}
-
-##makes an empty list of 8 total features, names of elements defined by atlas column names
-mergedlist<-sapply(colnames(atlas[,2:9]),function(x) NULL)
-
-#recursively merges all dataframes for each sequence feature together from isolated list
-#inputs into merged list 
-for(i in 1:length(isolatedlist)){
-  mergedlist[[i]]<-as.data.frame(Reduce(function(x,y) {merge(x,y,all=TRUE)}, isolatedlist[[i]]))}   
-
-#stores sample HLA data from BIGDAWG into a new variable
-hladata<-genotypedata
-
-##makes an empty list of 8 total features, names of elements defined by atlas column names
-convertedlist<-sapply(colnames(atlas[,2:9]),function(x) NULL)
-
-#for loop for convering BIGDAWG like data into its GFE component, based on sequence feature desired
-for(i in 1:length(mergedlist)){
-  convertedlist[[i]]<-BDgenotypeconversion(genotypedata, allelefiles, mergedlist[[i]])}}
+  
+  #reads in HLA-GFE files from Bx12 Search Generator as a list
+  #where each element in the list is an HLA locus with its own dataframe
+  hladf<-multiFileread(GFE_HLAfiles, c("allelename", "gfe"), skip=3, clip=1)
+  
+  #splits GFE notations -- first at "w", then at "-"
+  hlasplit<-lapply(hladf, function(x) strsplit(t(as.data.frame(matrix(unlist(strsplit(x[,2],"w")), nrow=nrow(x), byrow=T), stringsAsFactors=FALSE)) [2,],"-"))
+  
+  #loops through rows in atlas -- takes each row in "locus", and splits the coinciding allele,
+  #forming a dataframe
+  #inputs into a blank splitDFs list
+  #field names, previously defined by framework, corresponds to HLA locus -- inserts 
+  #appropriate names to splitDFs
+  splitDFs<-list()
+  for(i in 1:nrow(atlas)){
+    splitDFs[[atlas$locus[i]]]<-data.frame(matrix(unlist(hlasplit[i]), byrow=T, nrow=length(hlasplit[[i]])), stringsAsFactors = FALSE)
+    colnames(splitDFs[[atlas$locus[i]]])<-framework[[i]]}
+  
+  #makes an empty list of 8 total features, names of elements defined by
+  #columnnames of the atlas
+  seqfeatureslist <- sapply(colnames(atlas[,2:9]),function(x) NULL)
+  
+  #for loop for inputting sequence feature isolations for all loci in list format 
+  for (k in 1:length(seqfeatureslist)) {
+    for (i in 1:nrow(atlas)){
+      seqfeatureslist[[k]][[atlas$locus[i]]]<-featureselect(i ,k+1, splitDFs[[i]])}
+  }
+  
+  #makes an empty list of 8 total features, names of elements defined by atlas column names
+  isolatedlist <- sapply(colnames(atlas[,2:9]),function(x) NULL)
+  
+  #for loop for pasting all sequence feature fields together
+  #inputs into isolatedlist
+  for(i in 1:nrow(atlas)){
+    for(k in 1:length(seqfeatureslist)){
+      isolatedlist[[k]][[atlas$locus[i]]]<-GFEpaster(seqfeatureslist[[k]], i, splitDFs[[i]], hladf, i, as.character(str_replace_all(paste(atlas$locus[i], "*00:00"), " ", "")))}}
+  
+  ##makes an empty list of 8 total features, names of elements defined by atlas column names
+  mergedlist<-sapply(colnames(atlas[,2:9]),function(x) NULL)
+  
+  #recursively merges all dataframes for each sequence feature together from isolated list
+  #inputs into merged list 
+  for(i in 1:length(isolatedlist)){
+    mergedlist[[i]]<-as.data.frame(Reduce(function(x,y) {merge(x,y,all=TRUE)}, isolatedlist[[i]]))}   
+  
+  #stores sample HLA data from BIGDAWG into a new variable
+  hladata<-genotypedata
+  
+  ##makes an empty list of 8 total features, names of elements defined by atlas column names
+  convertedlist<-sapply(colnames(atlas[,2:9]),function(x) NULL)
+  
+  #for loop for convering BIGDAWG like data into its GFE component, based on sequence feature desired
+  for(i in 1:length(mergedlist)){
+    convertedlist[[i]]<-BDgenotypeconversion(genotypedata, allelefiles, mergedlist[[i]])}
+  
+  return(convertedlist)}
 
 
 ###########END SCRIPT  
+
+SequenceFeatIsolation("/Users/liviatran/Desktop/ltmasterscoding/HLA", HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")
 
 
