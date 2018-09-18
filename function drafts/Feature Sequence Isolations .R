@@ -1,6 +1,6 @@
 ####Feature Sequence Isolation for GFEs 
 ##By: Livia Tran 
-#V 1.4
+#V 1.5
 #September 17, 2018
 
 
@@ -49,17 +49,17 @@ CWDverify <- function(){
   CWD$data
 }
 
-#for identifying common, well-documented alleles in HLA data 
+CWDverify()
+#for identifying common, well-documented alleles in HLA data
 cwdID <- function(allelelistFile,gfefiles) {
   hlaacc<-read.csv(allelelistFile, header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
   hladf<-gfefiles
   hladf$alleleID<-hlaacc$AlleleID[match(hladf$allelename, paste("HLA",hlaacc$Allele,sep="-"))] 
-  hladf$alleleID<-ifelse(is.na(hladf$alleleID)=="TRUE", paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hladf$allelename), "x", sep=""), hladf$alleleID)
   cwdalleles<-CWDverify()
   hladf$CWD<-ifelse(hladf$alleleID %in% cwdalleles$Accession, "CWD", "NON-CWD")
   return(hladf)}
 
-View(cwdID("/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt", mergedlist[[1]]))
+
 ##function for reading multiple HLA files in, but keeping them as separate dataframes
 multiFileread <- function(filepath, columnnames, skip, clip){
   filenames=list.files(path=filepath, full.names=TRUE)
@@ -89,6 +89,32 @@ GFEpaster<-function(seqfeaturelist, seqfeatureposition, lociDF, BSGdf, BSGdfposi
   return(featureselectDF)}
 
 
+#function to convert BIGDAWG formatted data into its GFE component 
+BDgenotypeconversion<-function(genotypedata, allelefiles, gfefiles){
+  proceed <- TRUE
+  if (is.data.frame(genotypedata)) {bigdawghladata <- genotypedata} else 
+  {switch(tolower(substr(genotypedata,nchar(genotypedata)-2,nchar(genotypedata))),
+          "csv" = bigdawghladata <- read.csv(genotypedata, stringsAsFactors = F, header=T, check.names = F), 
+          "txt" = bigdawghladata <- read.table(genotypedata, stringsAsFactors = F, header=T, sep="\t", check.names = FALSE), 
+          "tsv" = bigdawghladata <- read.table(genotypedata, stringsAsFactors = F, header=T,sep="\t",check.names = FALSE), 
+          proceed <- FALSE)}
+  if(proceed) {
+    hlamerged<-cwdID(allelefiles, gfefiles)
+    hlafields<-strsplit(t(as.data.frame(matrix(unlist(strsplit(hlamerged[,1],"\\*")), nrow=nrow(hlamerged), byrow=T), stringsAsFactors=FALSE)) [2,],":")
+    hlalist<-list()            
+    for (i in 3:ncol(bigdawghladata)){
+      hlalist[[i]]<-strsplit(bigdawghladata[,i],":")} 
+    for(i in 3:ncol(bigdawghladata)){
+      bigdawghladata[i]<-paste(sapply(hlalist[[i]], "[", 1), sapply(hlalist[[i]], "[", 2), sep=":")
+      bigdawghladata[,i]<-paste(colnames(bigdawghladata[i]),bigdawghladata[,i],sep="*")}
+    for (i in 3:ncol(bigdawghladata)){
+      bigdawghladata[i]<-ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="CWD", 
+                                hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*")
+                                )], ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="NON-CWD", 
+                                           hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1",  hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*")
+                                           )], ""))} 
+    
+    return(bigdawghladata)} else {print("Error: Unrecognized filename suffix. Stopping BDgenotypeconversion()")}}
 
 ###########BEGIN SCRIPT 
 
@@ -145,61 +171,23 @@ mergedlist<-sapply(colnames(atlas[,2:9]),function(x) NULL)
 for(i in 1:length(isolatedlist)){
 mergedlist[[i]]<-as.data.frame(Reduce(function(x,y) {merge(x,y,all=TRUE)}, isolatedlist[[i]]))}   
 
-
-BDgenotypeconversion<-function(genotypedata, allelefiles, gfefiles){
-  proceed <- TRUE
-  if (is.data.frame(genotypedata)) {bigdawghladata <- genotypedata} else 
-  {switch(tolower(substr(genotypedata,nchar(genotypedata)-2,nchar(genotypedata))),
-          "csv" = bigdawghladata <- read.csv(genotypedata, stringsAsFactors = F, header=T, check.names = F), 
-          "txt" = bigdawghladata <- read.table(genotypedata, stringsAsFactors = F, header=T, sep="\t", check.names = FALSE), 
-          "tsv" = bigdawghladata <- read.table(genotypedata, stringsAsFactors = F, header=T,sep="\t",check.names = FALSE), 
-          proceed <- FALSE)}
-  if(proceed) {
-    hlamerged<-cwdID(allelefiles, gfefiles)
-    hlafields<-strsplit(t(as.data.frame(matrix(unlist(strsplit(hlamerged[,1],"\\*")), nrow=nrow(hlamerged), byrow=T), stringsAsFactors=FALSE)) [2,],":")
-    hlalist<-list()            
-    for (i in 3:ncol(bigdawghladata)){
-      hlalist[[i]]<-strsplit(bigdawghladata[,i],":")} 
-    for(i in 3:ncol(bigdawghladata)){
-      bigdawghladata[i]<-paste(sapply(hlalist[[i]], "[", 1), sapply(hlalist[[i]], "[", 2), sep=":")
-      bigdawghladata[,i]<-paste(colnames(bigdawghladata[i]),bigdawghladata[,i],sep="*")}
-    for (i in 3:ncol(bigdawghladata)){
-      bigdawghladata[i]<-ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="CWD", 
-                                hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*")
-                                )], ifelse(hlamerged$CWD[match(paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="NON-CWD", 
-                                           hlamerged$GFEs[match(paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1",  hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*")
-                                           )], ""))} 
-    
-    return(bigdawghladata)} else {print("Error: Unrecognized filename suffix. Stopping BDgenotypeconversion()")}}
-
+#stores sample HLA data from BIGDAWG into a new variable
 hladata<-HLA_data
+
+##makes an empty list of 8 total features, names of elements defined by atlas column names
 convertedlist<-sapply(colnames(atlas[,2:9]),function(x) NULL)
 
+#for loop for convering BIGDAWG like data into its GFE component, based on sequence feature desired
 for(i in 1:length(mergedlist)){
 convertedlist[[i]]<-BDgenotypeconversion(hladata, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt", mergedlist[[i]])}
 
 
 ###########END SCRIPT  
 
+BIGDAWG(HLA = F, convertedlist[[1]], Run.Tests = "L")
 
 
-bigdawghladata<-HLA_data
 
-
-hlamerged<-cwdID("/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt", mergedlist[[1]])
-hlafields<-strsplit(t(as.data.frame(matrix(unlist(strsplit(hlamerged[,1],"\\*")), nrow=nrow(hlamerged), byrow=T), stringsAsFactors=FALSE)) [2,],":")
-hlalist<-list()            
-for (i in 3:ncol(bigdawghladata)){
-  hlalist[[i]]<-strsplit(bigdawghladata[,i],":")} 
-for(i in 3:ncol(bigdawghladata)){
-  bigdawghladata[i]<-paste(sapply(hlalist[[i]], "[", 1), sapply(hlalist[[i]], "[", 2), sep=":")
-  bigdawghladata[,i]<-paste(colnames(bigdawghladata[i]),bigdawghladata[,i],sep="*")}
-for (i in 3:ncol(bigdawghladata)){
-  bigdawghladata[i]<-ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="CWD", 
-                            hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*")
-                            )], ifelse(hlamerged$CWD[match(paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="NON-CWD", 
-                                       hlamerged$GFEs[match(paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1",  hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*")
-                                       )], ""))} 
 
 
 
