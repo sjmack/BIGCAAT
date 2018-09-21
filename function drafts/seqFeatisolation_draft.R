@@ -1,7 +1,18 @@
-####Feature Sequence Isolation for GFEs 
+####Feature Sequence Isolation for GFEs  - draft for making into a function 
 ##By: Livia Tran 
-#V 1.5
-#September 17, 2018
+#V 1.6
+#September 20, 2018
+
+###This function isolates pre-determined feature sequences for a given allele (in this case, HLA)
+#referenced by a user-made atlas, which is guided by a user-made framework containing information on
+#a given allele's gene features in its GFE notation format. The feature sequence is honed in on by
+#zeroing out all other fields. HLA data may be compared to these zeroed-out GFEs to obtain appropriate
+#GFE notations, depending on the feature sequence of interest. Analysis may then be carried out
+#by BIGDAWG to better understand distribution of categories and its effects on phenotypes (case or control). 
+
+#loads necessary libraries
+require(stringr)
+require(BIGDAWG)
 
 ############NECESSARY FUNCTIONS 
 #CWDverify, by SJ MACK -- compares CWD catalogue to changed and deleted files
@@ -77,8 +88,8 @@ featureselect<-function(x, y, GFEsplitDF){
 #inputs a *00:00 allele, with a maxed out GFE for each field 
 GFEpaster<-function(seqfeaturelist, seqfeatureposition, BSGdf, BSGdfposition){
   cols<- 1:length(seqfeaturelist[[seqfeatureposition]])
-  GFEs<-str_replace_all(paste(gsub("[*].*", "", unlist(BSGdf[[BSGdfposition]][BSGdfposition])),paste("w", apply(seqfeaturelist[[seqfeatureposition]][,cols] , 1 , paste, collapse="-"))), " ", "")
-  featureselectDF<-cbind.data.frame(BSGdf[[BSGdfposition]][[BSGdfposition]], GFEs, stringsAsFactors=FALSE)
+  GFEs<-str_replace_all(paste(gsub("[*].*", "", unlist(BSGdf[[BSGdfposition]][[1]])),paste("w", apply(seqfeaturelist[[seqfeatureposition]][,cols] , 1 , paste, collapse="-"))), " ", "")
+  featureselectDF<-cbind.data.frame(BSGdf[[BSGdfposition]][[1]], GFEs, stringsAsFactors=FALSE)
   colnames(featureselectDF)[1] <- colnames(BSGdf[[BSGdfposition]][,])[1]
   return(featureselectDF)}
 
@@ -99,8 +110,14 @@ BDgenotypeconversion<-function(genotypedata, allelefiles, gfefiles){
     for (i in 3:ncol(bigdawghladata)){
       hlalist[[i]]<-strsplit(bigdawghladata[,i],":")} 
     for(i in 3:ncol(bigdawghladata)){
-      bigdawghladata[i]<-ifelse(is.na(hlalist[[i]])==FALSE, paste(sapply(hlalist[[i]], "[", 1), sapply(hlalist[[i]], "[", 2), sep=":"), NA)    
-      bigdawghladata[i]<-ifelse(is.na(bigdawghladata[[i]])==FALSE, paste(colnames(bigdawghladata[i]),bigdawghladata[,i],sep="*"), NA)}
+      bigdawghladata[i]<-paste(sapply(hlalist[[i]], "[", 1), sapply(hlalist[[i]], "[", 2), sep=":")
+      bigdawghladata[,i]<-paste(colnames(bigdawghladata[i]),bigdawghladata[,i],sep="*")}
+    for (i in 3:ncol(bigdawghladata)){
+      bigdawghladata[i]<-ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="CWD", 
+                                hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*")
+                                )], ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="NON-CWD", 
+                                           hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1",  hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"), paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*")
+                                           )], ""))} 
     
     return(bigdawghladata)} else {print("Error: Unrecognized filename suffix. Stopping BDgenotypeconversion()")}}
 
@@ -114,14 +131,11 @@ load("/Users/liviatran/ltmasterscoding/framework.rda")
 load("/Users/liviatran/ltmasterscoding/atlas.rda")
 load("/Users/liviatran/ltmasterscoding/cwdalleles.rda")
 
-#loads necessary libraries
-require(stringr)
-require(BIGDAWG)
 
 hladf<-multiFileread("/Users/liviatran/Desktop/ltmasterscoding/HLA", c("allelename", "gfe"), skip=3, clip=1)
-                                                                                                                  
+
 #splits GFE notations -- first at "w", then at "-"
-hlasplit<-lapply(hladf, function(x) strsplit(t(as.data.frame(matrix(unlist(strsplit(x[,2],"w")), nrow=nrow(x), byrow=T), stringsAsFactors=FALSE)) [2,],"-"))
+hlasplit<-lapply(hladf, function(x) strsplit(t(as.data.frame(matrix(unlist(strsplit(x[,2],"w", fixed = TRUE)), nrow=nrow(x), byrow=T), stringsAsFactors=FALSE)) [2,],"-", fixed=TRUE))
 
 #loops through rows in atlas -- takes each row in "locus", and splits the coinciding allele,
 #forming a dataframe
@@ -133,18 +147,6 @@ for(i in 1:nrow(atlas)){
   splitDFs[[atlas$locus[i]]]<-data.frame(matrix(unlist(hlasplit[i]), byrow=T, nrow=length(hlasplit[[i]])), stringsAsFactors = FALSE)
   colnames(splitDFs[[atlas$locus[i]]])<-framework[[i]]}
 
-#adds a new row to the original hladf with maximum GFE numeric obtained from splitDFs
-for (i in 1:nrow(atlas)){
-  hladf[[i]][nrow(hladf[[i]]) + 1,] = list(as.character(str_replace_all(paste(atlas$locus[i], "*00:00"), " ", "")), paste(names(framework)[i],paste(rep(max(as.numeric(as.character(unlist(splitDFs[[i]]))))+1,length(framework[[1]])),collapse="-"),sep="w"))}
-
-#splits this new hladf with added *00:00 alleles
-hlasplit<-lapply(hladf, function(x) strsplit(t(as.data.frame(matrix(unlist(strsplit(x[,2],"w")), nrow=nrow(x), byrow=T), stringsAsFactors=FALSE)) [2,],"-"))
-
-#makes another set of exploded DFs with the *00:00 alleles
-splitDFs<-list()
-for(i in 1:nrow(atlas)){
-  splitDFs[[atlas$locus[i]]]<-data.frame(matrix(unlist(hlasplit[i]), byrow=T, nrow=length(hlasplit[[i]])), stringsAsFactors = FALSE)
-  colnames(splitDFs[[atlas$locus[i]]])<-framework[[i]]}
 
 #makes an empty list of 8 total features, names of elements defined by
 #columnnames of the atlas
@@ -156,19 +158,31 @@ for (k in 1:length(seqfeatureslist)) {
     seqfeatureslist[[k]][[atlas$locus[i]]]<-featureselect(i ,k+1, splitDFs[[i]])}
 }
 
-cols<- 1:length(seqfeatureslist[[1]][[1]])
-GFEs<-str_replace_all(paste(gsub("[*].*", "", unlist(hladf[[1]][1])),paste("w", apply(seqfeatureslist[[1]][[1]][,cols] , 1 , paste, collapse="-"))), " ", "")
+#makes an empty list of 8 total features, names of elements defined by
+#columnnames of the atlas
+appendedseqlist<-sapply(colnames(atlas[,2:9]),function(x) NULL)
 
+#for loop for adding a row to each dataframe of seqfeatureslist for *00:00 alleles and making a zeroed template based on the number of
+#individual sequence features for each loci 
+#finds the max GFE notation based on split DFs -- fills in appropriate maxed GFEs based on desired feature group 
+for(i in 1:nrow(atlas)){
+  for(k in 1:length(seqfeatureslist)){
+    appendedseqlist[[k]][[atlas$locus[i]]]<-seqfeatureslist[[k]][[i]]
+    appendedseqlist[[k]][[atlas$locus[i]]][nrow(appendedseqlist[[k]][[atlas$locus[i]]])+1,] <- as.data.frame(rbind(rep(0,length(appendedseqlist[[k]][[atlas$locus[i]]]))))
+    appendedseqlist[[k]][[atlas$locus[i]]][nrow(appendedseqlist[[k]][[atlas$locus[i]]]),][,unlist(atlas[i,k+1])]<-unlist(rep(max(as.numeric(as.character(unlist(splitDFs[[i]]))))+1,length(framework[[i]])))[unlist(atlas[i,k+1])]}}
+
+#appends new row to BSG files to account for *00:00 alleles 
+for (i in 1:nrow(atlas)){
+  hladf[[i]][nrow(hladf[[i]]) + 1,] = list(as.character(str_replace_all(paste(atlas$locus[i], "*00:00"), " ", "")), NA)}
 
 #makes an empty list of 8 total features, names of elements defined by atlas column names
 isolatedlist <- sapply(colnames(atlas[,2:9]),function(x) NULL)
 
-
 #for loop for pasting all sequence feature fields together
 #inputs into isolatedlist
 for(i in 1:nrow(atlas)){
-  for(k in 1:length(seqfeatureslist)){
-    isolatedlist[[k]][[atlas$locus[i]]]<-GFEpaster(seqfeatureslist[[k]], i, hladf, i)}}
+  for(k in 1:length(appendedseqlist)){
+    isolatedlist[[k]][[atlas$locus[i]]]<-GFEpaster(appendedseqlist[[k]], i, hladf, i)}}
 
 ##makes an empty list of 8 total features, names of elements defined by atlas column names
 mergedlist<-sapply(colnames(atlas[,2:9]),function(x) NULL)
@@ -177,6 +191,7 @@ mergedlist<-sapply(colnames(atlas[,2:9]),function(x) NULL)
 #inputs into merged list 
 for(i in 1:length(isolatedlist)){
   mergedlist[[i]]<-as.data.frame(Reduce(function(x,y) {merge(x,y,all=TRUE)}, isolatedlist[[i]]))}   
+
 
 #stores sample HLA data from BIGDAWG into a new variable
 hladata<-HLA_data
@@ -187,13 +202,5 @@ convertedlist<-sapply(colnames(atlas[,2:9]),function(x) NULL)
 #for loop for convering BIGDAWG like data into its GFE component, based on sequence feature desired
 for(i in 1:length(mergedlist)){
   convertedlist[[i]]<-BDgenotypeconversion(hladata, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt", mergedlist[[i]])}
-
-View(isolatedlist[[1]][[1]])
-###########END SCRIPT  
-
-BIGDAWG(HLA = F, convertedlist[[1]], Run.Tests = "L")
-
-
-
 
 
