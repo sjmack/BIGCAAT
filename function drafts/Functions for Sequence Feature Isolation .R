@@ -112,9 +112,10 @@ BDgenotypeconversion<-function(genotypedata, allelefiles, gfefiles){
       bigdawghladata[i]<-ifelse(is.na(hlalist[[i]])==FALSE, paste(sapply(hlalist[[i]], "[", 1), sapply(hlalist[[i]], "[", 2), sep=":"), NA)    
       bigdawghladata[i]<-ifelse(is.na(bigdawghladata[[i]])==FALSE, paste(colnames(bigdawghladata[i]),bigdawghladata[,i],sep="*"), NA)}
     for (i in 3:ncol(bigdawghladata)){
-      bigdawghladata[i]<- ifelse(is.na(bigdawghladata[[i]])==FALSE, ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"),)]=="CWD", 
-                                                                           hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))], 
-                                                                           ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="NON-CWD", 
+      bigdawghladata[i]<- ifelse(is.na(bigdawghladata[[i]])==FALSE, 
+            ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"),)]=="CWD", 
+             hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))], 
+                                                                      ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="NON-CWD", 
                                                                                   hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))], NA)),NA)}
     return(bigdawghladata)} else {print("Error: Unrecognized filename suffix. Stopping BDgenotypeconversion()")}}
 
@@ -190,25 +191,22 @@ custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/
   
 ##function to convert BIGDAWG formatted data into its GFE counterpart based on feature group or sequence feature desired
 
-dataConvert<-function(mergedcustomdata, BIGDAWGgenotypedata, alleleListfiles){
-  
+dataConvert<-function(mergedcustomdata, mapdesired, BIGDAWGgenotypedata, alleleListfiles){
 #loads necessary library for access to example of BIGDAWG formatted HLA data
 require(BIGDAWG)
-
+mapdesired<-menu(c(paste(colnames(atlas)[2:ncol(atlas)])), title="Which map would you like to use?")
 ##makes an empty list of 8 total features, names of elements defined by atlas column names
 convertedlist<-sapply(colnames(atlas[,2:length(atlas)]),function(x) NULL)
-
 #for loop for convering BIGDAWG like data into its GFE component, based on sequence feature desired
 for(i in 1:length(mergedcustomdata)){
-  convertedlist[[i]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, mergedcustomdata[[i]])}
-
-return(convertedlist)}
+  convertedlist[[mapdesired]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, mergedcustomdata[[mapdesired]])}
+return(convertedlist[[mapdesired]])}
 
 
 #tests out function
 #"/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt" is a list of documented HLA alleles with
 #their allele IDs 
 #obtained from https://github.com/ANHIG/IMGTHLA/blob/Latest/Allelelist.3310.txt
-convertedGenotypeData<-dataConvert(custom_mergeddata, HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")
+convertedGenotypeData<-dataConvert(custom_mergeddata, mapdesired, HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")
 
 
