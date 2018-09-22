@@ -1,7 +1,7 @@
-####Feature Sequence Isolation for GFEs  - draft for making into a function 
+####Feature Sequence Isolation for GFEs working draft 
 ##By: Livia Tran 
-#V 1.6
-#September 20, 2018
+#V 1.7
+#September 21, 2018
 
 ###This function isolates pre-determined feature sequences for a given allele (in this case, HLA)
 #referenced by a user-made atlas, which is guided by a user-made framework containing information on
@@ -80,8 +80,9 @@ multiFileread <- function(filepath, columnnames, skip, clip){
 featureselect<-function(x, y, GFEsplitDF){
   dataframe <- GFEsplitDF
   dataframe[,1:ncol(dataframe)] <- as.data.frame(rbind(rep(0,length(dataframe))))
-  dataframe[,unlist(atlas[x,y])] <- GFEsplitDF[unlist(atlas[x,y])]
+  if(any(unlist(atlas[x,y])==0) == FALSE) {dataframe[,unlist(atlas[x,y])] <- GFEsplitDF[unlist(atlas[x,y])]}
   return(dataframe)}
+
 
 #function for pasting all GFE fields together
 #adds an additional row to all loci for each sequence feature
@@ -157,8 +158,8 @@ for (k in 1:length(seqfeatureslist)) {
   for (i in 1:nrow(atlas)){
     seqfeatureslist[[k]][[atlas$locus[i]]]<-featureselect(i ,k+1, splitDFs[[i]])
     seqfeatureslist[[k]][[atlas$locus[i]]][nrow(seqfeatureslist[[k]][[atlas$locus[i]]])+1,] <- as.data.frame(rbind(rep(0,length(seqfeatureslist[[k]][[atlas$locus[i]]]))))
-    seqfeatureslist[[k]][[atlas$locus[i]]][nrow(seqfeatureslist[[k]][[atlas$locus[i]]]),][,unlist(atlas[i,k+1])]<-unlist(rep(max(as.numeric(as.character(unlist(splitDFs[[i]]))))+1,length(framework[[i]])))[unlist(atlas[i,k+1])]
-}}
+    if(any(unlist(atlas[i,k+1])==0) == FALSE) {seqfeatureslist[[k]][[atlas$locus[i]]][nrow(seqfeatureslist[[k]][[atlas$locus[i]]]),][,unlist(atlas[i,k+1])]<-unlist(rep(max(as.numeric(as.character(unlist(splitDFs[[i]]))))+1,length(framework[[i]])))[unlist(atlas[i,k+1])]}
+  }}
 
 
 #appends new row to BSG files to account for *00:00 alleles 
