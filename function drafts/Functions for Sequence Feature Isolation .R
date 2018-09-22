@@ -2,7 +2,7 @@
 ##Function for convering BIGDAWG formatted data into its GFE counterpart based on feature/feature group desired -- dataConvert()
 
 ##By: Livia Tran 
-#V 1.0
+#V 1.1
 #September 21, 2018
 
 
@@ -209,6 +209,6 @@ return(convertedlist)}
 #"/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt" is a list of documented HLA alleles with
 #their allele IDs 
 #obtained from https://github.com/ANHIG/IMGTHLA/blob/Latest/Allelelist.3310.txt
-dataConvert(custom_mergeddata, HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")
+convertedGenotypeData<-dataConvert(custom_mergeddata, HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")
 
 
