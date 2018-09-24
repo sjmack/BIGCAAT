@@ -2,9 +2,20 @@
 ##Function for convering BIGDAWG formatted data into its GFE counterpart based on feature/feature group desired -- dataConvert()
 
 ##By: Livia Tran 
-#V 1.1
+#V 1.4
 #September 21, 2018
 
+##This script aims to isolate pre-determined feature sequences for a given allele (in this case, HLA)
+#referenced by a user-made atlas, which is guided by a user-made framework containing information on
+#a given allele's gene features in its GFE notation format. The feature sequence is honed in on by
+#zeroing out all other fields. HLA data may be compared to these zeroed-out GFEs to obtain appropriate
+#GFE notations, depending on the feature sequence of interest. Analysis may then be carried out
+#by BIGDAWG to better understand distribution of categories and its effects on phenotypes (case or control).
+#Through two main functions, individual feature sequences or feature groups can be isolated in garnering
+#GFE information for BIGDAWG formatted data.
+#customGFEgenerator() generates a set of custom HLA GFE notations based on user design of an atlas. 
+#dataConvert() converts BIGDAWG formatted data into its GFE counterpart, depending on desired sequence
+#feature or feature groups 
 
 #loads necessary libraries
 require(stringr)
@@ -79,7 +90,6 @@ featureselect<-function(x, y, GFEsplitDF){
   if(any(unlist(atlas[x,y])==0) == FALSE) {dataframe[,unlist(atlas[x,y])] <- GFEsplitDF[unlist(atlas[x,y])]}
   return(dataframe)}
 
-
 #function for pasting all GFE fields together
 #adds an additional row to all loci for each sequence feature
 #inputs a *00:00 allele, with a maxed out GFE for each field 
@@ -89,7 +99,6 @@ GFEpaster<-function(seqfeaturelist, seqfeatureposition, BSGdf, BSGdfposition){
   featureselectDF<-cbind.data.frame(BSGdf[[BSGdfposition]][[1]], GFEs, stringsAsFactors=FALSE)
   colnames(featureselectDF)[1] <- colnames(BSGdf[[BSGdfposition]][,])[1]
   return(featureselectDF)}
-
 
 #function to convert BIGDAWG formatted data into its GFE component 
 BDgenotypeconversion<-function(genotypedata, allelefiles, gfefiles){
@@ -113,14 +122,9 @@ BDgenotypeconversion<-function(genotypedata, allelefiles, gfefiles){
       bigdawghladata[i]<-ifelse(is.na(bigdawghladata[[i]])==FALSE, paste(colnames(bigdawghladata[i]),bigdawghladata[,i],sep="*"), NA)}
     for (i in 3:ncol(bigdawghladata)){
       bigdawghladata[i]<- ifelse(is.na(bigdawghladata[[i]])==FALSE, 
-            ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"),)]=="CWD", 
-             hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))], 
-                                                                      ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="NON-CWD", 
-                                                                                  hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))], NA)),NA)}
+                                 ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"),)]=="CWD",
+                                        hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))], ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="NON-CWD", hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))], NA)),NA)}
     return(bigdawghladata)} else {print("Error: Unrecognized filename suffix. Stopping BDgenotypeconversion()")}}
-
-
-###########BEGIN SCRIPT 
 
 ###loads pre-made RDA files 
 ###framework.rda is a list consisting of feature identification for each field of a GFE
@@ -129,6 +133,7 @@ load("/Users/liviatran/ltmasterscoding/framework.rda")
 load("/Users/liviatran/ltmasterscoding/atlas2.0.rda")
 load("/Users/liviatran/ltmasterscoding/cwdalleles.rda")
 
+###########BEGIN SCRIPT for customGFEgenerator()
 
 ####Function for generating a custom list of HLA-GFE tables, stored in mergedlist at the end of the function 
 customGFEgenerator<-function(GFEfiledirectory, columnnames, skip, clip){
@@ -183,30 +188,51 @@ for(i in 1:length(isolatedlist)){
 return(mergedlist)
 }
 
+###########END SCRIPT 
 
-##tests out the function 
+##tests out customGFEgenerator
 #"/Users/liviatran/Desktop/ltmasterscoding/HLA" is a list of BSG files for all HLA loci 
-custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/HLA", c("allelename", "gfe"), skip=3, clip=1)
+custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/HLA", columnnames = c("allelename", "gfe"), skip=3, clip=1)
 
-  
+
+###########BEGIN SCRIPT for dataConvert()
+
 ##function to convert BIGDAWG formatted data into its GFE counterpart based on feature group or sequence feature desired
+#parameters to note:
+#info is a parameter that allows the user to view map options (i.e. to look at all possible options for
+#feature groups or individual sequence features)
+#info is defaulted to FALSE, where the user must input the desired feature sequence or feature group into the mapname argument
+#if a user specifies info=T, a message with map options is ouput into the console
+#the mapname parameter takes the desired sequence feature or feature group (dictated by the atlas)
+#from the custom merged data set from customGFEgenerator(), and outputs GFE notations for that specific
+#mapname
+#if the user specifies "all" into mapname, all feature sequences and feature groups present in the atlas
+#are returned for a given BIGDAWG formatted file
 
-dataConvert<-function(mergedcustomdata, mapdesired, BIGDAWGgenotypedata, alleleListfiles){
-#loads necessary library for access to example of BIGDAWG formatted HLA data
-require(BIGDAWG)
-mapdesired<-menu(c(paste(colnames(atlas)[2:ncol(atlas)])), title="Which map would you like to use?")
-##makes an empty list of 8 total features, names of elements defined by atlas column names
-convertedlist<-sapply(colnames(atlas[,2:length(atlas)]),function(x) NULL)
+dataConvert<-function(mergedcustomdata=custom_mergeddata, mapname, BIGDAWGgenotypedata, alleleListfiles, info=F){
+if(info==TRUE){cat(paste("The following ‘maps’ are available in the atlas:",paste(colnames(atlas)[2:ncol(atlas)],collapse=" "),sep="\n"))}
+if(info==FALSE){
+if(any(mapname==colnames(atlas[,2:length(atlas)]))){
+  convertedlist<-sapply(colnames(atlas[,2:length(atlas)]),function(x) NULL)
 #for loop for convering BIGDAWG like data into its GFE component, based on sequence feature desired
-for(i in 1:length(mergedcustomdata)){
-  convertedlist[[mapdesired]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, mergedcustomdata[[mapdesired]])}
-return(convertedlist[[mapdesired]])}
+for(i in 1:length(custom_mergeddata[[mapname]])){
+  convertedlist[[mapname]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[mapname]])}
+return(convertedlist[[mapname]])}
+if(mapname=="all")
+  {print("All parameter activated - using all maps for reference")
+  convertedlist<-sapply(colnames(atlas[,2:length(atlas)]),function(x) NULL)
+  #loads necessary library for access to example of BIGDAWG formatted HLA data
+  #for loop for convering BIGDAWG like data into its GFE component, based on sequence feature desired
+  for(i in 1:length(custom_mergeddata)){
+    convertedlist[[i]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[i]])}
+  return(convertedlist)}}}
 
+############END SCRIPT for dataConvert()
 
-#tests out function
+#tests out dataConvert for 5'UTRs
+#to obtain GFE conversions for ALL feature groups/individual feature sequences,
+#input "all" into the mapname parameter
 #"/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt" is a list of documented HLA alleles with
 #their allele IDs 
 #obtained from https://github.com/ANHIG/IMGTHLA/blob/Latest/Allelelist.3310.txt
-convertedGenotypeData<-dataConvert(custom_mergeddata, mapdesired, HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")
-
-
+converteddata<-dataConvert(custom_mergeddata, "fiveUTR", HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")

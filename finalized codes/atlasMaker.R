@@ -1,13 +1,13 @@
-##atlas
+##atlasMaker
 #By: Livia Tran
 #September 21, 2019
-#v 2.1
+#v 2.2
 
 ##function to make an atlas based on user-defined framework
 #where this framework is made via inividual features and feature groups from HLA GFE notations
 #see framework.rda
-atlasMaker <- function(framework){
-  atlas<-data.frame(locus=names(framework))
+atlasMaker <- function(frame=framework){
+  atlas<-data.frame(locus=names(frame))
   
   atlas$fiveUTR<-list(1, 1, 1, 1,
                       1, 1, 1, 1,
@@ -101,9 +101,9 @@ atlasMaker <- function(framework){
                       c(3,5,7), c(3,5,7,9), c(3,5,7), c(3,5,7,9,11),
                       c(3,5,7,9,11),c(3,5,7,9,11),c(3,5,7,9,11),c(3,5,7,9,11))
   
-  atlas$tmexons<-list(10,10,10,
-                      8,8,8,8,
+  atlas$tmexons<-list(10,10,10, 8,8,8,8,
                       8,8,8,8)
+  
   atlas$noncore<-list(c(2, 8, 10, 12, 14, 16), c(2, 8, 10, 12), c(2, 8, 10, 12, 14, 16),
                       c(2, 6, 8), c(2, 6, 8, 10), c(2, 6, 8), c(2, 6, 8, 10, 12),
                       c(2, 6, 8, 10, 12), c(2, 6, 8, 10, 12), c(2, 6, 8, 10, 12), c(2, 6))
@@ -112,7 +112,7 @@ atlasMaker <- function(framework){
 }
 
 #generates atlas 
-atlas<-makeAtlas(framework)
+atlas<-atlasMaker(framework)
 
 #option to save as .rdafile
 save(atlas, file="atlas2.0.rda")
