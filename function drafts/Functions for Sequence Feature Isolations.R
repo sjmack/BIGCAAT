@@ -1,7 +1,7 @@
 ###Sequence Feature Isolation 
 ##By: Livia Tran 
-#V 1.5
-#September 23, 2018
+#V 1.6
+#September 24, 2018
 
 ##This script aims to isolate pre-determined feature sequences for a given allele (in this case, HLA)
 #referenced by a user-made atlas, which is guided by a user-made framework containing information on
@@ -197,22 +197,23 @@ return(mergedlist)
 #are returned for a given BIGDAWG formatted file
 
 dataConvert<-function(mergedcustomdata=custom_mergeddata, mapname, BIGDAWGgenotypedata, alleleListfiles, info=F){
-if(info==TRUE){cat(paste("The following ‘maps’ are available in the atlas:",paste(colnames(atlas)[2:ncol(atlas)],collapse=" "),sep="\n"))}
-if(info==FALSE){
-if(any(mapname==colnames(atlas[,2:length(atlas)]))){
-  convertedlist<-sapply(colnames(atlas[,2:length(atlas)]),function(x) NULL)
-#for loop for convering BIGDAWG like data into its GFE component, based on sequence feature desired
-for(i in 1:length(custom_mergeddata[[mapname]])){
-  convertedlist[[mapname]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[mapname]])}
-return(convertedlist[[mapname]])}
-if(mapname=="all")
-  {print("All parameter activated - using all maps for reference")
-  convertedlist<-sapply(colnames(atlas[,2:length(atlas)]),function(x) NULL)
-  #loads necessary library for access to example of BIGDAWG formatted HLA data
-  #for loop for convering BIGDAWG like data into its GFE component, based on sequence feature desired
-  for(i in 1:length(custom_mergeddata)){
-    convertedlist[[i]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[i]])}
-  return(convertedlist)}}}
+  #requires BIGDAWG package to run loci, haplotype, and HWE tests on data
+  require(BIGDAWG)
+  if(info==TRUE){cat(paste("The following ‘maps’ are available in the atlas:",paste(colnames(atlas)[2:ncol(atlas)],collapse=" "),sep="\n"))}
+  if(info==FALSE){
+  if(any(mapname==colnames(atlas[,2:length(atlas)]))){
+  convertedlist<-list()
+  #converts BIGDAWG formatted data based on feature desired, followed by immediate analysis for all
+  #three available tests
+  BIGDAWG(BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[mapname]]), HLA=F, Run.Tests = c("HWE", "H", "L"))}
+    if(any(mapname=="all")){
+    convertedlist<-sapply(colnames(atlas[,2:length(atlas)]),function(x) NULL)
+      #for loop for converting BIGDAWG formatted data into its GFE components based on all maps,
+    #followed by immediate analysis for all tests in BIGDAWG 
+      for(i in 1:length(custom_mergeddata)){
+        convertedlist[[i]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[i]])}
+      BIGDAWG(convertedlist[[i]], HLA=F, Run.Tests = c("L", "HWE", "H"))}}}
+
 
 ############END SCRIPT for dataConvert()
 
@@ -237,4 +238,6 @@ custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/
 #"/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt" is a list of documented HLA alleles with
 #their allele IDs 
 #obtained from https://github.com/ANHIG/IMGTHLA/blob/Latest/Allelelist.3310.txt
-converteddata<-dataConvert(custom_mergeddata, "fiveUTR", HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")
+dataConvert(custom_mergeddata, "fiveUTR", HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")
+
+
