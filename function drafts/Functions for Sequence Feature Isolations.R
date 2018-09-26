@@ -1,6 +1,6 @@
 ###Sequence Feature Isolation 
 ##By: Livia Tran 
-#V 1.7
+#V 1.8
 #September 25, 2018
 
 ##This script aims to isolate pre-determined feature sequences for a given allele (in this case, HLA)
@@ -15,8 +15,11 @@
 #dataConvert() converts BIGDAWG formatted data into its GFE counterpart, depending on desired sequence
 #feature or feature groups 
 
-#loads necessary libraries
+#stringr package is necessary for str_replace_all function
 require(stringr)
+
+#BIGDAWG package is necessary for sample BIGDAWG formatted HLA data, and 
+#BIGDAWG function is used later for Locus analysis 
 require(BIGDAWG)
 
 ############FUNCTIONS 
@@ -186,20 +189,18 @@ return(mergedlist)
 
 ##function to convert BIGDAWG formatted data into its GFE counterpart based on feature group or sequence feature desired
 #parameters to note:
-#info is a parameter that allows the user to view map options (i.e. to look at all possible options for
+#info is a logical parameter that allows the user to view map options (i.e. to look at all possible options for
 #feature groups or individual sequence features)
 #info is defaulted to FALSE, where the user must input the desired feature sequence or feature group into the mapname argument
-#if a user specifies info=T, a message with map options is ouput into the console
+#if a user specifies info=T, a message with map options is ouput to the console
 #the mapname parameter takes the desired sequence feature or feature group (dictated by the atlas)
 #from the custom merged data set from customGFEgenerator(), and outputs GFE notations for that specific
 #mapname
-#if the user specifies "all" into mapname, all feature sequences and feature groups present in the atlas
+#if the user defines mapname=="all", all feature sequences and feature groups present in the atlas
 #are returned for a given BIGDAWG formatted file
 #if the user does not specify anything for mapname, the default will be "all"
 
 dataConvert<-function(mergedcustomdata=custom_mergeddata, mapname="all", BIGDAWGgenotypedata, alleleListfiles, info=F){
-  #requires BIGDAWG package to run loci, haplotype, and HWE tests on data
-  require(BIGDAWG)
   if(info==TRUE){cat(paste("The following ‘maps’ are available in the atlas:",paste(colnames(atlas)[2:ncol(atlas)],collapse=" "),sep="\n"))}
   if(info==FALSE){
     if(any(mapname%in%colnames(atlas[,2:length(atlas)]))==TRUE){ 
@@ -207,15 +208,18 @@ dataConvert<-function(mergedcustomdata=custom_mergeddata, mapname="all", BIGDAWG
       #stratifies BIGDAWG formatted data based on strongly associated MS alleles 
       #only uses BDgenotypeconversion on negatively associated alleles 
       #runs BIGDAWG on negatively associated alleles to MS
-      BIGDAWG(BDgenotypeconversion(BDStrat(BIGDAWGgenotypedata,"DRB1","15:01:01:01")[[2]], alleleListfiles, custom_mergeddata[[mapname]]), HLA=F, Run.Tests = c("HWE", "H", "L"))
+      BIGDAWG(BDgenotypeconversion(BDStrat(BIGDAWGgenotypedata,"DRB1","15:01:01:01")[[2]], alleleListfiles, custom_mergeddata[[mapname]]), HLA=F, Run.Tests = "L")
       return(BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[mapname]]))
       #converts BIGDAWG formatted data based on feature desired, followed by immediate analysis for all
       #three available tests for all loci 
-      BIGDAWG(BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[mapname]]),HLA=F, Run.Tests = c("HWE", "H", "L"))}}
-  
+      BIGDAWG(BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[mapname]]),HLA=F, Run.Tests = "L")}}
+
+  #if the user attempts to input a name not found in the atlas or all 
+  #(ex: user puts in "coreexon" which is not found in the atlas)
+  #a message prompts the user to set info=T to view options, or to use "all" to use all map names
   if(any(mapname%in%colnames(atlas[,2:length(atlas)]))==FALSE){
     if(any(isTRUE(mapname=="all")==FALSE))
-    {print("Invalid map name - please set info=T to view map names, or input all to use all map names.")}}
+    {cat("Invalid map name - please set info=T to view map names, or input 'all' to use all map names.")}}
   
   if(any(isTRUE(mapname=="all")==TRUE)){
     convertedlist<-sapply(colnames(atlas[,2:length(atlas)]),function(x) NULL)
@@ -225,11 +229,11 @@ dataConvert<-function(mergedcustomdata=custom_mergeddata, mapname="all", BIGDAWG
       convertedlist[[i]]<-BDgenotypeconversion(BDStrat(BIGDAWGgenotypedata, "DRB1","15:01:01:01")[[2]], alleleListfiles, custom_mergeddata[[i]])}
     #runs BIGDAWG on negatively associated alleles to MS
     for(i in 1:length(convertedlist)){
-      BIGDAWG(convertedlist[[i]], HLA=F, Run.Tests = c("HWE", "H", "L"))}
+      BIGDAWG(convertedlist[[i]], HLA=F, Run.Tests ="L")}
     for (i in 1:length(custom_mergeddata)){
       convertedlist[[i]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[i]])}
     for (i in 1:length(convertedlist)){
-      BIGDAWG(convertedlist[[i]], HLA=F, Run.Tests = c("HWE", "H", "L"))}
+      BIGDAWG(convertedlist[[i]], HLA=F, Run.Tests = "L")}
   }}
 
 ############END SCRIPT for dataConvert()
