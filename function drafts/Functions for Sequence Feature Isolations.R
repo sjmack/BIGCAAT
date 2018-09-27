@@ -1,19 +1,52 @@
 ###Sequence Feature Isolation 
 ##By: Livia Tran 
-#V 1.8
-#September 25, 2018
+#V 1.9
+#September 27, 2018
 
-##This script aims to isolate pre-determined feature sequences for a given allele (in this case, HLA)
-#referenced by a user-made atlas, which is guided by a user-made framework containing information on
-#a given allele's gene features in its GFE notation format. The feature sequence is honed in on by
-#zeroing out all other fields. HLA data may be compared to these zeroed-out GFEs to obtain appropriate
+##This script aims to isolate pre-determined feature groups for a given locus in its GFE notation.
+
+#HLA data may be compared to these zeroed-out GFEs to obtain appropriate
 #GFE notations, depending on the feature sequence of interest. Analysis may then be carried out
 #by BIGDAWG to better understand distribution of categories and its effects on phenotypes (case or control).
 #Through two main functions, individual feature sequences or feature groups can be isolated in garnering
 #GFE information for BIGDAWG formatted data.
-#customGFEgenerator() generates a set of custom HLA GFE notations based on user design of an atlas. 
-#dataConvert() converts BIGDAWG formatted data into its GFE counterpart, depending on desired sequence
-#feature or feature groups 
+#customGFEgenerator() generates a set of custom HLA GFE notations based on a user-defined ‘atlas’ that 
+#directs the ‘zeroing-out’ of specific features and feature groups.
+#BIGDAWG_GFEanalyzer() converts each allele in a BIGDAWG formatted genotype dataset into its corresponding 
+#GFE notation, as defined by a given set of custom GFE notations, followed by analysis in BIGDAWG
+#for outputs of analyzed locus data.
+
+#Individual features and feature group isolations are based off a user-made atlas. The atlas is based off
+#a framework, which is also user-made.
+#The framework is a list of HLA loci, with values of individual gene features derived from
+#GFE notations.
+#The atlas functions off the framework for locus information, which is input in the first column.
+  #The atlas is meant to be a road-map for users to define what feature group or individual features
+  #they want compare. This atlas consists of individual features previously defined in the framework
+  #as well as feature groups defined by LeFranc et. al, 2005, "IMGT unique numbering for MHC groove
+  #G-Domain and MHC superfamily (MhcSF) G-LIKE-DOMAIN". Feature groups coded by one exon (i.e. individual feature) 
+  #are combined name-wise (see exon 1 and Leader peptide, exon 8 and C-domain). Coordinates for a desired
+  #feature of interest allows all other gene features to be masked, thus focusing on the feature of interest.
+  
+##Source-Files:
+#BSG files
+  #Generated from Bx12 Search Generator, which compiles data from the Neo4J database. BSG files
+  #are downloadable by locus, where each file consists of an allele name for a given locus and its
+  #GFE notations. 11 total HLA files where downloaded from Bx12 Search Generator in .csv format.
+  #These are used in multiFileread().
+#Allelelist.3310.txt
+  #obtained from https://github.com/ANHIG/IMGTHLA/blob/Latest/Allelelist.3310.txt
+  #Various versions of Allelelist.___.txt are available depending on the version of HLA alleles used
+  #This file is a list of documented HLA alleles with their allele IDs
+  #needed for the alleleListfile parameter in dataConvert
+
+###loads pre-made RDA files 
+###framework.rda is a list consisting of feature identification for each field of a GFE
+###atlas2.0.rda is a dataframe that gives the position for selected features in a GFE as well as individual features
+load("/Users/liviatran/ltmasterscoding/framework.rda")
+load("/Users/liviatran/ltmasterscoding/atlas2.0.rda")
+load("/Users/liviatran/ltmasterscoding/cwdalleles.rda")
+
 
 #stringr package is necessary for str_replace_all function
 require(stringr)
@@ -67,7 +100,9 @@ CWDverify <- function(){
   CWD$data
 }
 
-#for identifying common, well-documented alleles in HLA data
+#for identifying CWD alleles and inputting each allele's unique allele ID 
+##optional usage for alleles with CWD alleles (i.e. HLA)
+#users looking at other genes that do not have CWD documentation need not use this function
 cwdID <- function(allelelistFile,gfefiles) {
   hlaacc<-read.csv(allelelistFile, header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
   hladf<-gfefiles
@@ -75,7 +110,7 @@ cwdID <- function(allelelistFile,gfefiles) {
   hladf$CWD<-ifelse(hladf$alleleID %in% cwdalleles$Accession, "CWD", "NON-CWD")
   return(hladf)}
 
-##function for reading multiple HLA files in, but keeping them as separate dataframes
+##function for reading all BSG files in, but keeping them as separate dataframes
 multiFileread <- function(filepath, columnnames, skip, clip){
   filenames=list.files(path=filepath, full.names=TRUE)
   datalist = lapply(filenames, function(x){read.csv(file=x,header=FALSE, stringsAsFactors=FALSE, skip=skip, col.names = columnnames)})
@@ -188,55 +223,63 @@ return(mergedlist)
 ###########BEGIN SCRIPT for dataConvert()
 
 ##function to convert BIGDAWG formatted data into its GFE counterpart based on feature group or sequence feature desired
+
 #parameters to note:
 #info is a logical parameter that allows the user to view map options (i.e. to look at all possible options for
 #feature groups or individual sequence features)
 #info is defaulted to FALSE, where the user must input the desired feature sequence or feature group into the mapname argument
 #if a user specifies info=T, a message with map options is ouput to the console
-#the mapname parameter takes the desired sequence feature or feature group (dictated by the atlas)
+#the mapname parameter identifies the desired map of the atlas, which directs the function to return
+#GFE notations for that desired map
 #from the custom merged data set from customGFEgenerator(), and outputs GFE notations for that specific
 #mapname
 #if the user defines mapname=="all", all feature sequences and feature groups present in the atlas
-#are returned for a given BIGDAWG formatted file
+#are sequentially used to define the conversion of HLA alleles to atlas-specified custom GFE 
+#notations in a BIGDAWG-formatted genotype dataset.L
 #if the user does not specify anything for mapname, the default will be "all"
-
-dataConvert<-function(mergedcustomdata=custom_mergeddata, mapname="all", BIGDAWGgenotypedata, alleleListfiles, info=F){
+#return is a logical parameter as an option for users to view their custom
+#feature group or individual feature isolated GFE notations before they are
+#analyzed by BIGDAWG 
+BIGDAWG_GFEanalyzer<-function(BIGDAWGgenotypedata, alleleListfiles, mergedcustomdata=custom_mergeddata, mapname="all",info=F, return=F){
+  #logical parameters for info
   if(info==TRUE){cat(paste("The following ‘maps’ are available in the atlas:",paste(colnames(atlas)[2:ncol(atlas)],collapse=" "),sep="\n"))}
   if(info==FALSE){
-    if(any(mapname%in%colnames(atlas[,2:length(atlas)]))==TRUE){ 
-      convertedlist<-list()
-      #stratifies BIGDAWG formatted data based on strongly associated MS alleles 
-      #only uses BDgenotypeconversion on negatively associated alleles 
-      #runs BIGDAWG on negatively associated alleles to MS
-      BIGDAWG(BDgenotypeconversion(BDStrat(BIGDAWGgenotypedata,"DRB1","15:01:01:01")[[2]], alleleListfiles, custom_mergeddata[[mapname]]), HLA=F, Run.Tests = "L")
-      return(BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[mapname]]))
-      #converts BIGDAWG formatted data based on feature desired, followed by immediate analysis for all
-      #three available tests for all loci 
-      BIGDAWG(BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[mapname]]),HLA=F, Run.Tests = "L")}}
-
-  #if the user attempts to input a name not found in the atlas or all 
-  #(ex: user puts in "coreexon" which is not found in the atlas)
-  #a message prompts the user to set info=T to view options, or to use "all" to use all map names
-  if(any(mapname%in%colnames(atlas[,2:length(atlas)]))==FALSE){
-    if(any(isTRUE(mapname=="all")==FALSE))
-    {cat("Invalid map name - please set info=T to view map names, or input 'all' to use all map names.")}}
-  
-  if(any(isTRUE(mapname=="all")==TRUE)){
-    convertedlist<-sapply(colnames(atlas[,2:length(atlas)]),function(x) NULL)
-    #stratifies BIGDAWG formatted data based on strongly associated MS alleles 
-    #only uses BDgenotypeconversion on negatively associated alleles 
-    for (i in 1:length(custom_mergeddata)){
-      convertedlist[[i]]<-BDgenotypeconversion(BDStrat(BIGDAWGgenotypedata, "DRB1","15:01:01:01")[[2]], alleleListfiles, custom_mergeddata[[i]])}
-    #runs BIGDAWG on negatively associated alleles to MS
-    for(i in 1:length(convertedlist)){
-      BIGDAWG(convertedlist[[i]], HLA=F, Run.Tests ="L")}
-    for (i in 1:length(custom_mergeddata)){
-      convertedlist[[i]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[i]])}
-    for (i in 1:length(convertedlist)){
-      BIGDAWG(convertedlist[[i]], HLA=F, Run.Tests = "L")}
+    #default start and end to 0 
+    start<-end<-0
+  #if the input mapname is not all or in the names of the atlas, an error message is output
+    if(any(mapname%in%colnames(atlas[,2:length(atlas)]))==FALSE){
+      if(any(isTRUE(mapname=="all")==FALSE)){
+        cat("Invalid map name. Please set info=T to view map names, or input 'all' to use all map names.", sep="\n")}}
+   #creates an empty list if only one individual feature/feature group is desired
+     convertedlist <- list()
+    #if mapname=a column name in the atlas, start and end are equal to the GFE contents of the mapname
+    if(any(mapname%in%colnames(atlas[,2:length(atlas)]))==TRUE){
+      start<-end<-match(mapname,names(custom_mergeddata))}
+     #if mapname=all, a converted list with column names from the atlas is made
+     #start is equal to the first custom table generated by the atlas 
+     #end indicates using the columns in the atlas starting form the second column (first column is locus info)
+     #until the end of the atlas
+    if(any(mapname=="all")){
+      convertedlist<-sapply(colnames(atlas[,2:length(atlas)]),function(x) NULL)
+      start=1
+      end=ncol(atlas[,2:length(atlas)])}
+    ###end of logical parameters 
+     
+     #for loop for converting BIGDAWG formatted data into its GFE equivalent, where start and end
+     #are defined by the logical parameters above, depending on what the user chooses for mapname
+      for (i in start:end){
+        convertedlist[[names(custom_mergeddata)[i]]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[i]])}
+     #for loop for running BIGDAWG 'locus level' analysis on data
+     for(i in start:end){
+        BIGDAWG(convertedlist[[names(custom_mergeddata)[i]]], HLA=F, Run.Tests ="L")}
+     #if return =T, the user may view the converted GFE equivalent of the BIGDAWG formatted data 
+     if(return==T){
+       for (i in start:end){
+        return(convertedlist[[names(custom_mergeddata)[i]]])}
+}
   }}
-
-############END SCRIPT for dataConvert()
+    
+############END SCRIPT for BIGDAWG_GFEanalyzer()
 
 #### BDStrat -- simple allele stratification of BIGDAWG formatted datasets  
 ####            Steven J. Mack September 13 - 18, 2018 v0.1
@@ -298,23 +341,22 @@ BDStrat <- function(dataset,locus,alleles){
 
 ####EXAMPLES
 
-###loads pre-made RDA files 
-###framework.rda is a list consisting of feature identification for each field of a GFE
-###atlas2.0.rda is a dataframe that gives the position for selected features in a GFE as well as individual features
-load("/Users/liviatran/ltmasterscoding/framework.rda")
-load("/Users/liviatran/ltmasterscoding/atlas2.0.rda")
-load("/Users/liviatran/ltmasterscoding/cwdalleles.rda")
 
 ##tests out customGFEgenerator
 #"/Users/liviatran/Desktop/ltmasterscoding/HLA" is a list of BSG files for all HLA loci 
 custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/HLA", columnnames = c("allelename", "gfe"), skip=3, clip=1)
 
-#tests out dataConvert for 5'UTRs
-#to obtain GFE conversions for ALL feature groups/individual feature sequences,
-#input "all" into the mapname parameter
-#"/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt" is a list of documented HLA alleles with
-#their allele IDs 
-#obtained from https://github.com/ANHIG/IMGTHLA/blob/Latest/Allelelist.3310.txt
-dataConvert(custom_mergeddata, "all", HLA_data, "/Users/liviatran/Desktop/ltmasterscoding/Allelelist.3310.txt")
+#tests out BIGDAWGGFEanalyzer
+BIGDAWG_GFEanalyzer(HLA_data,"Allelelist.3310.txt",mapname="fiveUTR", return=T)
+
+#stratifies HLA_data to negatively and positively associated MS alleles
+stratified<-(BDStrat(HLA_data,"DRB1","15:01:01:01"))
+
+#for loop for converting both negatively and positively associated MS alleles to their
+#GFE notations followed by analysis by BIGDAWG
+for(i in 1:length(stratified)){
+BIGDAWG_GFEanalyzer(stratified[[i]], "Allelelist.3310.txt", mapname="fiveUTR")}
+
+
 
 
