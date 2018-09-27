@@ -220,7 +220,7 @@ return(mergedlist)
 ###########END SCRIPT for customGFEgenerator()
 
 
-###########BEGIN SCRIPT for dataConvert()
+###########BEGIN SCRIPT for BIGDAWG_GFEanalyzer()
 
 ##function to convert BIGDAWG formatted data into its GFE counterpart based on feature group or sequence feature desired
 
