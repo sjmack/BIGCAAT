@@ -1,7 +1,7 @@
 ###Sequence Feature Isolation 
 ##By: Livia Tran 
-#V 1.11
-#September 27, 2018
+#V 1.12
+#September 28, 2018
 
 ##This script aims to isolate pre-determined feature groups for a given locus in its GFE notation.
 
@@ -276,11 +276,8 @@ BIGDAWG_GFEanalyzer<-function(BIGDAWGgenotypedata, alleleListfiles, mergedcustom
        proceed<-TRUE}
      
        else
-         if(any(mapname%in%names(custom_mergeddata))==FALSE){
-         if(mapname!="all"){
-           cat("Invalid map name. Please set info=T to view map names, or input 'all' to use all map names.", sep="\n")
-           proceed<-FALSE
-         }}
+         cat("Invalid map name. Please set info=T to view map names, or input 'all' to use all map names.", sep="\n")
+         proceed<-FALSE
    ###end of logical parameters 
      
   ###if proceed--   
@@ -297,8 +294,8 @@ BIGDAWG_GFEanalyzer<-function(BIGDAWGgenotypedata, alleleListfiles, mergedcustom
       #if return =T, the user may view the converted GFE equivalent of the BIGDAWG formatted data 
      if(return==T){
         View(convertedlist)}
-}}}
-    
+     }}}
+
 ############END SCRIPT for BIGDAWG_GFEanalyzer()
 
 #### BDStrat -- simple allele stratification of BIGDAWG formatted datasets  
@@ -367,7 +364,7 @@ BDStrat <- function(dataset,locus,alleles){
 custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/HLA", columnnames = c("allelename", "gfe"), skip=3, clip=1)
 
 #tests out BIGDAWGGFEanalyzer
-BIGDAWG_GFEanalyzer(HLA_data,"Allelelist.3310.txt",mapname="all", return=T)
+BIGDAWG_GFEanalyzer(HLA_data,"Allelelist.3310.txt",mapname="bat", return=T)
 
 #stratifies HLA_data to negatively and positively associated MS alleles
 stratified<-(BDStrat(HLA_data,"DRB1","15:01:01:01"))
