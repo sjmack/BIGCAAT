@@ -275,9 +275,9 @@ BIGDAWG_GFEanalyzer<-function(BIGDAWGgenotypedata, alleleListfiles, mergedcustom
        start<-end<-match(mapname,names(custom_mergeddata))
        proceed<-TRUE}
      
-       else
+       else{
          cat("Invalid map name. Please set info=T to view map names, or input 'all' to use all map names.", sep="\n")
-         proceed<-FALSE
+         proceed<-FALSE}
    ###end of logical parameters 
      
   ###if proceed--   
@@ -364,7 +364,7 @@ BDStrat <- function(dataset,locus,alleles){
 custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/HLA", columnnames = c("allelename", "gfe"), skip=3, clip=1)
 
 #tests out BIGDAWGGFEanalyzer
-BIGDAWG_GFEanalyzer(HLA_data,"Allelelist.3310.txt",mapname="bat", return=T)
+BIGDAWG_GFEanalyzer(HLA_data,"Allelelist.3310.txt",mapname="fiveUTR", return=T)
 
 #stratifies HLA_data to negatively and positively associated MS alleles
 stratified<-(BDStrat(HLA_data,"DRB1","15:01:01:01"))
