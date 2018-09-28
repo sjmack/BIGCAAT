@@ -5,10 +5,12 @@
 
 ##This script aims to isolate pre-determined feature groups for a given locus in its GFE notation.
 
-#HLA data may be compared to these zeroed-out GFEs to obtain appropriate
-#GFE notations, depending on the feature sequence of interest. Analysis may then be carried out
-#by BIGDAWG to better understand distribution of categories and its effects on phenotypes (case or control).
-#Through two main functions, individual feature sequences or feature groups can be isolated in garnering
+#HLA data may be compared to zeroed-out GFEs to obtain appropriate
+#GFE notations, depending on the feature sequence of interest. 
+#Zeroed-out GFE notations refer to all fields other than the feature(s) of interest to contain zeros.
+#Analysis may then be carried out by BIGDAWG to better understand distribution of categories and 
+#its effects on phenotypes (case or control).
+#Through two main functions, individual feature sequences or feature groups can be isolated in obtaining
 #GFE information for BIGDAWG formatted data.
 #customGFEgenerator() generates a set of custom HLA GFE notations based on a user-defined ‘atlas’ that 
 #directs the ‘zeroing-out’ of specific features and feature groups.
@@ -18,15 +20,18 @@
 
 #Individual features and feature group isolations are based off a user-made atlas. The atlas is based off
 #a framework, which is also user-made.
-#The framework is a list of HLA loci, with values of individual gene features derived from
-#GFE notations.
-#The atlas functions off the framework for locus information, which is input in the first column.
-  #The atlas is meant to be a road-map for users to define what feature group or individual features
+#The framework is a list of HLA loci, with the names of individual gene features derived from
+#GFE notations (i.e. 5'UTR, Exon 1, Intron 1...)
+#The atlas relies on the framework for locus information, which is put in the first column of the atlas.
+  #The atlas is meant to be a "road-map" for users to define what feature group or individual features
   #they want compare. This atlas consists of individual features previously defined in the framework
-  #as well as feature groups defined by LeFranc et. al, 2005, "IMGT unique numbering for MHC groove
-  #G-Domain and MHC superfamily (MhcSF) G-LIKE-DOMAIN". Feature groups coded by one exon (i.e. individual feature) 
+  #as well as feature groups informed by structural domains described in
+  #LeFranc et. al, 2005, "IMGT unique numbering for MHC groove G-Domain and MHC superfamily (MhcSF) G-LIKE-DOMAIN".
+  #Feature groups that contain one exon (i.e. an individual feature) 
   #are combined name-wise (see exon 1 and Leader peptide, exon 8 and C-domain). Coordinates for a desired
-  #feature of interest allows all other gene features to be masked, thus focusing on the feature of interest.
+  #feature of interest allows all other gene features to be zeroed-out, thus focusing on the feature of interest.
+  #Each column in the atlas is a "map" that defines the location of each feature or feature group for a 
+  #given locus.
   
 ##Source-Files:
 #BSG files
@@ -100,7 +105,7 @@ CWDverify <- function(){
   CWD$data
 }
 
-#for identifying CWD alleles and inputting each allele's unique allele ID 
+#for identifying CWD alleles and identifying each allele's unique allele ID 
 ##optional usage for alleles with CWD alleles (i.e. HLA)
 #users looking at other genes that do not have CWD documentation need not use this function
 cwdID <- function(allelelistFile,gfefiles) {
@@ -110,7 +115,7 @@ cwdID <- function(allelelistFile,gfefiles) {
   hladf$CWD<-ifelse(hladf$alleleID %in% cwdalleles$Accession, "CWD", "NON-CWD")
   return(hladf)}
 
-##function for reading all BSG files in, but keeping them as separate dataframes
+##function for reading all BSG files in, combines them into a single, multi-locus dataframe
 multiFileread <- function(filepath, columnnames, skip, clip){
   filenames=list.files(path=filepath, full.names=TRUE)
   datalist = lapply(filenames, function(x){read.csv(file=x,header=FALSE, stringsAsFactors=FALSE, skip=skip, col.names = columnnames)})
@@ -234,8 +239,8 @@ return(mergedlist)
 #mapname
 #if the user defines mapname=="all", all feature sequences and feature groups present in the atlas
 #are sequentially used to define the conversion of HLA alleles to atlas-specified custom GFE 
-#notations in a BIGDAWG-formatted genotype dataset.L
-#if the user does not specify anything for mapname, the default will be "all"
+#notations in a BIGDAWG-formatted genotype dataset.
+#if the user does not specify anything for mapname, the default is always "all"
 #return is a logical parameter as an option for users to view their custom
 #feature group or individual feature isolated GFE notations before they are
 #analyzed by BIGDAWG 
