@@ -1,7 +1,7 @@
 ###Sequence Feature Isolation 
 ##By: Livia Tran 
-#V 1.13
-#September 28, 2018
+#V 1.14
+#September 30, 2018
 
 ##This script aims to isolate pre-determined feature groups for a given locus in its GFE notation.
 
@@ -270,14 +270,14 @@ BIGDAWG_GFEanalyzer<-function(BIGDAWGgenotypedata, alleleListfiles, mergedcustom
       end=length(names(mergedcustomdata))
       proceed<-TRUE}
      
-     else 
+     else{
        if(mapname%in%names(mergedcustomdata)==TRUE){
        start<-end<-match(mapname,names(mergedcustomdata))
        proceed<-TRUE}
      
        else{
          cat("Invalid map name. Please set info=T to view map names, or input 'all' to use all map names.", sep="\n")
-         proceed<-FALSE}
+         proceed<-FALSE}}
    ###end of logical parameters 
      
   ###if proceed--   
@@ -286,14 +286,13 @@ BIGDAWG_GFEanalyzer<-function(BIGDAWGgenotypedata, alleleListfiles, mergedcustom
      #convertedlist is named after the input BIGDAWGgenotype data - name of map name 
      if(proceed){ 
      for (i in start:end){
-        convertedlist[[paste(datasetName,names(mergedcustomdata)[i],sep="-")]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, mergedcustomdata[[i]])}
-     #for loop for running BIGDAWG 'locus level' analysis on data
-     for(i in 1:length(convertedlist)){
-        BIGDAWG(convertedlist[[i]], HLA=F, Run.Tests ="L")}
+      convertedlist[[paste(datasetName,names(mergedcustomdata)[i],sep="-")]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, mergedcustomdata[[i]])
+       cat(paste("*** Analyzing",names(mergedcustomdata[i]),"dataset ***","\n",sep=" "))
+       BIGDAWG(convertedlist[[paste(datasetName,names(mergedcustomdata)[i],sep="-")]], HLA=F, Run.Tests ="L")}
     
       #if return =T, the user may view the converted GFE equivalent of the BIGDAWG formatted data 
-     if(return==T){
-        View(convertedlist)}
+     if(return){
+        return(convertedlist)}
      }}}
 
 ############END SCRIPT for BIGDAWG_GFEanalyzer()
@@ -364,7 +363,7 @@ BDStrat <- function(dataset,locus,alleles){
 custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/HLA", columnnames = c("allelename", "gfe"), skip=3, clip=1)
 
 #tests out BIGDAWGGFEanalyzer
-BIGDAWG_GFEanalyzer(HLA_data,"Allelelist.3310.txt",mapname="exon2", return=T)
+BIGDAWG_GFEanalyzer(HLA_data,"Allelelist.3310.txt")
 
 #stratifies HLA_data to negatively and positively associated MS alleles
 stratified<-(BDStrat(HLA_data,"DRB1","15:01:01:01"))
