@@ -1,6 +1,6 @@
 ###Sequence Feature Isolation 
 ##By: Livia Tran 
-#V 1.12
+#V 1.13
 #September 28, 2018
 
 ##This script aims to isolate pre-determined feature groups for a given locus in its GFE notation.
@@ -272,7 +272,7 @@ BIGDAWG_GFEanalyzer<-function(BIGDAWGgenotypedata, alleleListfiles, mergedcustom
      
      else 
        if(mapname%in%names(mergedcustomdata)==TRUE){
-       start<-end<-match(mapname,names(custom_mergeddata))
+       start<-end<-match(mapname,names(mergedcustomdata))
        proceed<-TRUE}
      
        else{
@@ -286,10 +286,10 @@ BIGDAWG_GFEanalyzer<-function(BIGDAWGgenotypedata, alleleListfiles, mergedcustom
      #convertedlist is named after the input BIGDAWGgenotype data - name of map name 
      if(proceed){ 
      for (i in start:end){
-        convertedlist[[paste(datasetName,names(mergedcustomdata)[i],sep="-")]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, custom_mergeddata[[i]])}
+        convertedlist[[paste(datasetName,names(mergedcustomdata)[i],sep="-")]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, mergedcustomdata[[i]])}
      #for loop for running BIGDAWG 'locus level' analysis on data
      for(i in 1:length(convertedlist)){
-        BIGDAWG(convertedlist[[paste(datasetName,names(mergedcustomdata)[i],sep="-")]], HLA=F, Run.Tests ="L")}
+        BIGDAWG(convertedlist[[i]], HLA=F, Run.Tests ="L")}
     
       #if return =T, the user may view the converted GFE equivalent of the BIGDAWG formatted data 
      if(return==T){
@@ -364,7 +364,7 @@ BDStrat <- function(dataset,locus,alleles){
 custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/HLA", columnnames = c("allelename", "gfe"), skip=3, clip=1)
 
 #tests out BIGDAWGGFEanalyzer
-BIGDAWG_GFEanalyzer(HLA_data,"Allelelist.3310.txt",mapname="fiveUTR", return=T)
+BIGDAWG_GFEanalyzer(HLA_data,"Allelelist.3310.txt",mapname="exon2", return=T)
 
 #stratifies HLA_data to negatively and positively associated MS alleles
 stratified<-(BDStrat(HLA_data,"DRB1","15:01:01:01"))
