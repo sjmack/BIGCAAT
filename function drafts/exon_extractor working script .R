@@ -14,7 +14,7 @@ filefetcher <- function(loci) {
     download.file(URL,destfile = filename,method="libcurl")}}
   
 #fetches _prot.txt alignment files -- files are input to current working directory 
-GetFiles(c("A", "B", "C", "DPA1", "DPB1", "DRB1", "DRB3", "DRB4", "DRB5"))  
+filefetcher(c("A", "B", "C", "DPA1", "DPB1", "DRB1", "DRB3", "DRB4", "DRB5"))  
 
 #a function to extract core exon and non-core exon amino acid sequences
 exon_extractor <- function(locus){
