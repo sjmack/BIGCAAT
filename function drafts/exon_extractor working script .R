@@ -162,17 +162,20 @@ AA_matrix <- AA_matrix[-1,]
 AA_matrix <- rbind(c("A","00:00:00:00","00:00",paste("A","*00:00:00:00",sep=""),rep("^",ncol(AA_matrix)-4)),
                    AA_matrix)
 
-#creates empty list
-exonlist<-list()
 
 #AA_atlas.R is used as a guide for determining start and stop positions for each exon for a given HLA locus
 load("AA_atlas.rda")
 
+#creates empty list
+exonlist<-list()
+
 #for loop for subsetting AA_matrix by matching exon start and end cells from AA_atlas
 #column names of AA_matrix, which are AA positions
 #subsets relevant amino acids, inputting them into a list
+#binds previous columns with locus, allele, trimmed allele, and allele name information 
 for(i in 1:nrow(AA_atlas)){
-exonlist[[AA_atlas$exon[i]]]<-AA_matrix[2:nrow(AA_matrix),match(AA_atlas[i,2],colnames(AA_matrix)):match(AA_atlas[i,3],colnames(AA_matrix))]}
+exonlist[[AA_atlas$exon[i]]]<-cbind(AA_matrix[,1:4], AA_matrix[,match(AA_atlas[i,2],colnames(AA_matrix)):match(AA_atlas[i,3],colnames(AA_matrix))])}
+
 
 View(exonlist[[1]])
 
