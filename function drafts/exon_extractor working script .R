@@ -1,5 +1,5 @@
 #Extraction of core and non-core exon amino acid sequences 
-#V 0.2
+#V 0.3
 #By: Livia Tran
 
 #fetches "_prot.txt files from IMGTHLA for a specified HLA locus
@@ -100,8 +100,9 @@ RefTab <- BIGDAWG::ExonPtnList$RefExons[1,]
 RefTab$Reference.Exons<-list(c(1, 2, 3, 4, 5, 6, 7, 8))
 
 #changes Reference Peptide to include all amino acid sequences from Exon 1 - end of Exon 
-RefTab$Reference.Peptide<-"SHSMRYFFTSVSRPGRGEPRFIAVGYVDDTQFVRFDSDAASQKMEPRAPWIEQEGPEYWDQETRNMKAHSQTDRANLGTLRGYYNQSEDGSHTIQIMYGCDVGPDGRFLRGYRQDAYDGKDYIALNEDLRSWTAADMAAQITKRKWEAVHAAEQRRVYLEGRCVDGLRRYLENGKETLQRTDPPKTHMTHHPISDHEATLRCWALGFYPAEITLTWQRDGEDQTQDTELVETRPAGDGTFQKWAAVVVPSGEEQRYTCHVQHEGLPKPLTLRWELSSQPTIPIVGIIAGLVLLGAVITGAVVAAVMWRRKSSDRKGGSYTQAASSDSAQGSDVSLTACKV"
+RefTab$Reference.Peptide<-"MAVMAPRTLLLLLSGALALTQTWAGSHSMRYFFTSVSRPGRGEPRFIAVGYVDDTQFVRFDSDAASQKMEPRAPWIEQEGPEYWDQETRNMKAHSQTDRANLGTLRGYYNQSEDGSHTIQIMYGCDVGPDGRFLRGYRQDAYDGKDYIALNEDLRSWTAADMAAQITKRKWEAVHAAEQRRVYLEGRCVDGLRRYLENGKETLQRTDPPKTHMTHHPISDHEATLRCWALGFYPAEITLTWQRDGEDQTQDTELVETRPAGDGTFQKWAAVVVPSGEEQRYTCHVQHEGLPKPLTLRWELSSQPTIPIVGIIAGLVLLGAVITGAVVAAVMWRRKSSDRKGGSYTQAASSDSAQGSDVSLTACKV"
 
+RefTab$Reference.Start<-"1"
 
 ####in this case, the locus is hard-coded to A, as this code is still in development before testing
 #it out on all HLA loci 
@@ -160,3 +161,18 @@ AA_matrix <- AA_matrix[-1,]
 #adds in *00:00 alleles to account for alleleic absences 
 AA_matrix <- rbind(c("A","00:00:00:00","00:00",paste("A","*00:00:00:00",sep=""),rep("^",ncol(AA_matrix)-4)),
                    AA_matrix)
+
+#creates empty list
+exonlist<-list()
+
+#AA_atlas.R is used as a guide for determining start and stop positions for each exon for a given HLA locus
+load("AA_atlas.rda")
+
+#for loop for subsetting AA_matrix by matching exon start and end cells from AA_atlas
+#column names of AA_matrix, which are AA positions
+#subsets relevant amino acids, inputting them into a list
+for(i in 1:nrow(AA_atlas)){
+exonlist[[AA_atlas$exon[i]]]<-AA_matrix[2:nrow(AA_matrix),match(AA_atlas[i,2],colnames(AA_matrix)):match(AA_atlas[i,3],colnames(AA_matrix))]}
+
+View(exonlist[[1]])
+
