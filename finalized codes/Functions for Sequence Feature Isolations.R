@@ -1,6 +1,6 @@
 ###Sequence Feature Isolation 
 ##By: Livia Tran 
-#V 1.14
+#V 1.15
 #September 30, 2018
 
 ##This script aims to isolate pre-determined feature groups for a given locus in its GFE notation.
@@ -288,7 +288,7 @@ BIGDAWG_GFEanalyzer<-function(BIGDAWGgenotypedata, alleleListfiles, mergedcustom
      for (i in start:end){
       convertedlist[[paste(datasetName,names(mergedcustomdata)[i],sep="-")]]<-BDgenotypeconversion(BIGDAWGgenotypedata, alleleListfiles, mergedcustomdata[[i]])
        cat(paste("*** Analyzing",names(mergedcustomdata[i]),"dataset ***","\n",sep=" "))
-       BIGDAWG(convertedlist[[paste(datasetName,names(mergedcustomdata)[i],sep="-")]], HLA=F, Run.Tests ="L")}
+       BIGDAWG(convertedlist[[paste(datasetName,names(mergedcustomdata)[i],sep="-")]], HLA=F, Run.Tests ="L", Verbose=FALSE)}
     
       #if return =T, the user may view the converted GFE equivalent of the BIGDAWG formatted data 
      if(return){
@@ -321,11 +321,11 @@ BDStrat <- function(dataset,locus,alleles){
   # Since all loci are duplicated, check.names = TRUE generates "locus","Locus.1" name pairs for read files
   # and make.names(x,unique=TRUE) does the same for data frames
   if(!is.data.frame(dataset)) { 
-    dataset <- read.table(dataset,header = TRUE,sep="\t",check.names = TRUE)
+    dataset <- read.table(dataset,header = TRUE,sep="\t",check.names = TRUE, stringsAsFactors = FALSE)
   } else { colnames(dataset) <- make.names(colnames(dataset),unique = TRUE)}
   
   # Everything is stored in the strataSet list 
-  stratSet <- data.frame(rep(NA,nrow(dataset)))
+  stratSet <- data.frame(rep(NA,nrow(dataset)), stringsAsFactors = FALSE)
   
   # Identify the rows containing each target allele for each locus column
   for(i in 1:length(alleles)){
@@ -354,7 +354,6 @@ BDStrat <- function(dataset,locus,alleles){
   stratPair
 }
 
-
 ####EXAMPLES
 
 
@@ -362,17 +361,20 @@ BDStrat <- function(dataset,locus,alleles){
 #"/Users/liviatran/Desktop/ltmasterscoding/HLA" is a list of BSG files for all HLA loci 
 custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/HLA", columnnames = c("allelename", "gfe"), skip=3, clip=1)
 
+#save custom_mergeddata -- only generate again of BSG files are updated 
+save(custom_mergeddata,file="custom_mergeddata.rda")
+
 #tests out BIGDAWGGFEanalyzer
-BIGDAWG_GFEanalyzer(HLA_data,"Allelelist.3310.txt")
+BIGDAWG_GFEanalyzer("MS_EUR.txt","Allelelist.3310.txt")
 
 #stratifies HLA_data to negatively and positively associated MS alleles
-stratified<-(BDStrat(HLA_data,"DRB1","15:01:01:01"))
+stratified<-(BDStrat("MS_EUR.txt","DRB1","15:01"))
 
 #for loop for converting both negatively and positively associated MS alleles to their
 #GFE notations followed by analysis by BIGDAWG
 for(i in 1:length(stratified)){
-BIGDAWG_GFEanalyzer(stratified[[i]], "Allelelist.3310.txt", mapname="fiveUTR")}
-
+cat(paste("*** Analyzing",names(stratified[i]),"dataset ***","\n",sep=""))
+BIGDAWG_GFEanalyzer(stratified[[i]], "Allelelist.3310.txt")}
 
 
 
