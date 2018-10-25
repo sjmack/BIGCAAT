@@ -1,5 +1,5 @@
 #exon_extractor
-#V 0.6 - 10/22/18
+#V 0.7 - 10/25/2018
 #By: Livia Tran
 
 ###NOTE: this script is in its early stages and is using only the A_prot.txt and B_prot.txt files 
@@ -9,9 +9,22 @@
 require(data.table)
 require(BIGDAWG)
 
+#loads AA_atlas 
+#AA_atlas.R is used as a guide for determining start and stop positions for each exon for a given HLA locus
+load("AA_atlas.rda")
+
+###BEGIN FUNCTION SCRIPT
+exon_extractor<-function(loci){
+  
+#creates a list of NULL lists for each HLA locus, where each variable created
+#is to be filled in by a for loop later on 
+
+AA_segments<-AA_aligned <-refexon<-pepsplit<-alignment<-exonlist<- sapply(loci, function(x) NULL)
+
 #creates empty variables for the next for loop to input start/end values for each HLA locus
-start<-list()
-end<-list()
+start<-end<-list()
+
+###BEGIN FOR LOOP 
 
 #downloads appropriate loci_prot.txt files from ANHIG and reads them in
 #each individual locus will be an element alignment, an empty list created to
@@ -30,7 +43,6 @@ end<-list()
 #since Prot is at the start of the next set of AA sequences
 #defines end as the second element in start -1 row to signify the end of that segment
 #includes the final row of the matrix
-loci=c("A", "B")
 alignment<-list()
 for(i in 1:length(loci)) {
   alignment[[loci[i]]] <- fread(paste("https://raw.githubusercontent.com/ANHIG/IMGTHLA/3330/alignments/",paste(loci[i],"_prot.txt",sep=""),sep=""), fill=T, sep="\t", skip=7, header=F,strip.white=T,colClasses="character")
@@ -39,9 +51,20 @@ for(i in 1:length(loci)) {
   alignment[[loci[i]]]  <- strsplit(alignment[[i]]," ", fixed=T)
   alignment[[loci[i]]]  <- as.matrix(do.call(rbind,alignment[[i]]))
   alignment[[i]][which(alignment[[i]][,1]==alignment[[i]][,2]),2] <- ""
+  colnames(alignment[[i]])<-c(paste(loci[[i]], "alleles", sep=""), "pepseq")
   start[[loci[i]]]<-as.numeric(which(alignment[[i]][,1]=="Prot"))
   end[[loci[i]]] <- as.numeric(c(start[[i]][2:length(start[[i]])]-1,nrow(alignment[[i]])))
-}
+  for(j in 1:length(start[[i]])){
+    if(nrow(alignment[[i]][start[[i]][j]:end[[i]][j],])!=nrow(alignment[[i]][start[[i]][1]:end[[i]][1],]))
+    {x<-as.data.frame(alignment[[i]][,1][start[[i]][1]:end[[i]][1]][-c(1,2)], stringsAsFactors = F)
+    colnames(x)<-paste(loci[[i]], "alleles", sep="")
+    x<-cbind.data.frame(x, pepseq=as.character(paste(rep(".", nchar(tail(alignment[[i]][,2], 1))), collapse = "")), stringsAsFactors=FALSE)
+    y<-data.frame(tail(alignment[[i]],1), stringsAsFactors = F)
+    x$pepseq[match(y$Calleles,x$Calleles)]<-y$pepseq
+    alignment[[i]]<-as.matrix(rbind(head(alignment[[i]], -1), x))
+    start[[loci[i]]]<-as.numeric(which(alignment[[i]][,1]=="Prot"))
+    end[[loci[i]]] <- as.numeric(c(start[[i]][2:length(start[[i]])]-1,nrow(alignment[[i]])))}}}
+
 
 #creates a list of NULL lists for each HLA locus, where each variable created
 #is to be filled in by a for loop later on 
@@ -68,7 +91,6 @@ for(i in 1:length(loci)){
 #binds pep_split together by element in its previous list form by row
 #nullifies row names 
 #binds the first 4 columns of AA_segments with amino acid positions from pepsplit 
-
 for(i in 1:length(loci)){
   AA_segments[[i]] <- AA_segments[[i]][-c(1,2),]
   cols<-seq(0, ncol(AA_segments[[i]]), by=2)
@@ -108,7 +130,12 @@ load("AA_atlas.rda")
 #binds previous columns with locus, allele, trimmed allele, and allele name information 
 for(i in 1:length(AA_segments)){
   for(j in 1:nrow(AA_atlas[[i]])){
-    exonlist[[i]][[j]]<-cbind(AA_segments[[i]][,1:4], AA_segments[[i]][match(AA_atlas[[i]][j,2],colnames(AA_segments[[i]])):match(AA_atlas[[i]][j,3],colnames(AA_segments[[i]]))])}}
+    exonlist[[i]][[j]]<-cbind(AA_segments[[i]][,1:4], AA_segments[[i]][match(AA_atlas[[loci[i]]][j,2],colnames(AA_segments[[loci[i]]])):match(AA_atlas[[loci[i]]][j,3],colnames(AA_segments[[loci[i]]]))])}}
+return(exonlist)
+}
 
-View(exonlist[[1]][[1]])
+
+##END FUNCTION SCRIPT 
+
+hold<-exon_extractor("C")
 
