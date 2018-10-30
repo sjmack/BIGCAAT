@@ -16,11 +16,17 @@ corr_table[[loci[[1]]]]<- data.frame("correspondence"=T,
 
 
 corr_table[[loci[[2]]]]<- data.frame("correspondence"=c(T, F, T),
-                                     "actual_start"=c(-23,1,295),
-                                     "actual_end"=c(294,1,349), 
+                                     "actual_start"=c(-24,1,295),
+                                     "actual_end"=c(294,1, 349), 
                                      "alignment_start"=c(1, 295, 296),
-                                     "alignment_end"=c(294, 295, 350), stringsAsFactors = FALSE)
+                                     "alignment_end"=c(294, 295, 371),
+                                     stringsAsFactors = FALSE)
 
+corr_table[[loci[[2]]]]$actual_diff_start=c(1, "D1", 320)
+corr_table[[loci[[2]]]]$actual_diff_end=c(318, "D1", 372)
+
+corr_table[[loci[[2]]]]$alignment_diff_start=c(1, 325, 326)
+corr_table[[loci[[2]]]]$alignment_diff_end=c(324, 325, 372)
 
 
 corr_table[[loci[[3]]]]<- data.frame("correspondence"=c(T,F,T), 
@@ -29,4 +35,9 @@ corr_table[[loci[[3]]]]<- data.frame("correspondence"=c(T,F,T),
                                      "alignment_start"=c(1, 325, 331),
                                      "alignment_end"=c(324, 330, 405), stringsAsFactors = FALSE)
 
-View(corr_table[[3]])
+
+View(corr_table[[2]])
+
+as.numeric(corr_table[[2]]$actual_end-corr_table[[2]]$actual_start)+1
+
+295+75
