@@ -148,6 +148,7 @@ for(i in 1:length(parsed_list)){
 split_alleles[[i]]<-strsplit(sapply(strsplit(position_parsed[[i]][,1], "\\*"), "[", 2), ":")
 position_parsed[[i]][,1]<-paste(sapply(strsplit(position_parsed[[i]][,1], "\\*"), "[", 1), paste(sapply(split_alleles[[i]], "[", 1), sapply(split_alleles[[i]], "[", 2), sep=":"), sep="*")}
 
+is.data.frame(position_parsed[[1]][1])
 
 ##for loop to sort through position_parsed data
 ##where alleles found in MS_files are extracted
@@ -160,5 +161,5 @@ for(i in 1:length(parsed_list)){
 
 
 
-
+View(position_parsed[[1]][,2][match(MS_file[,3], position_parsed[[1]][,1]),drop=FALSE])
 
