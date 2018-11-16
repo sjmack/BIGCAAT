@@ -125,9 +125,9 @@ position_parsed<-split_alleles<-sapply(colnames(AA_segments[[1]][,5:ncol(AA_segm
 #for loop to extract only variant amino acids and input them into their respective element positions
 #in position_parsed 
 for(k in 1:length(exonlist[[1]])){
-for(i in 1:length(position_parsed[match(colnames(exonlist[[1]][[k]][5:ncol(exonlist[[1]][[k]])]), names(position_parsed))])){
-  for(j in (5:ncol(exonlist[[1]][[k]]))[i]){
-    position_parsed[match(colnames(exonlist[[1]][[k]][5:ncol(exonlist[[1]][[k]])]), names(position_parsed))][[i]]<-subset(exonlist[[1]][[k]][c(4,j)], exonlist[[1]][[k]][j]!=exonlist[[1]][[k]][,j][1])}}}
+  for(i in 1:length(position_parsed[match(colnames(exonlist[[1]][[k]][5:ncol(exonlist[[1]][[k]])]), names(position_parsed))])){
+    for(j in (5:ncol(exonlist[[1]][[k]]))[i]){
+      position_parsed[match(colnames(exonlist[[1]][[k]][5:ncol(exonlist[[1]][[k]])]), names(position_parsed))][[i]]<-subset(exonlist[[1]][[k]][c(4,j)], exonlist[[1]][[k]][j]!=exonlist[[1]][[k]][,j][1])}}}
 
 #reads in MS_file 
 MS_file<-read.table("MS_EUR.txt", sep="\t", header=T, check.names = F, stringsAsFactors = F)
@@ -135,8 +135,8 @@ MS_file<-read.table("MS_EUR.txt", sep="\t", header=T, check.names = F, stringsAs
 #sets blank cells to NA 
 #if cells do not contain NA, locus names are pasted to the allele in the MS_file
 for (i in 3:ncol(MS_file)){
-MS_file[MS_file==""]<-NA
-MS_file[[i]]<-ifelse(is.na(MS_file[[i]])==FALSE, paste(colnames(MS_file[i]),MS_file[,i],sep="*"), NA)}
+  MS_file[MS_file==""]<-NA
+  MS_file[[i]]<-ifelse(is.na(MS_file[[i]])==FALSE, paste(colnames(MS_file[i]),MS_file[,i],sep="*"), NA)}
 
 #creates a variable with the number of elements being equal to the length of the "actual" sequence
 #creates another list under each position with 6 more elements, where each element is a locus found in 
@@ -145,21 +145,23 @@ parsed_list<-lapply(split_alleles, function(x) append(x, list(A=NA, C=NA, B=NA, 
 
 #trims full allele names to a resolution of 2 
 for(i in 1:length(parsed_list)){
-split_alleles[[i]]<-strsplit(sapply(strsplit(position_parsed[[i]][,1], "\\*"), "[", 2), ":")
-position_parsed[[i]][,1]<-paste(sapply(strsplit(position_parsed[[i]][,1], "\\*"), "[", 1), paste(sapply(split_alleles[[i]], "[", 1), sapply(split_alleles[[i]], "[", 2), sep=":"), sep="*")}
-
-is.data.frame(position_parsed[[1]][1])
+  split_alleles[[i]]<-strsplit(sapply(strsplit(position_parsed[[i]][,1], "\\*"), "[", 2), ":")
+  position_parsed[[i]][,1]<-paste(sapply(strsplit(position_parsed[[i]][,1], "\\*"), "[", 1), paste(sapply(split_alleles[[i]], "[", 1), sapply(split_alleles[[i]], "[", 2), sep=":"), sep="*")}
 
 ##for loop to sort through position_parsed data
 ##where alleles found in MS_files are extracted
 #those alleles are converted to their respective variant amino acid
 #and input into their appropriate locus identifier within the amino acid position element 
 for(i in 1:length(parsed_list)){
-    for(j in 1:length(parsed_list[[i]])){
-      for(k in 3:length(na.omit(match(colnames(MS_file), names(parsed_list[[i]][j]))))){
-    ifelse(names(parsed_list[[i]][j])%in%colnames(MS_file[k]), parsed_list[[i]][which(names(parsed_list[[i]][j])%in%colnames(MS_file[k])==TRUE)]<-cbind(position_parsed[[i]][,1][match(MS_file[,k], position_parsed[[i]][,1])], position_parsed[[i]][,2][match(MS_file[,k], position_parsed[[i]][,1])]), NA)}}} 
+  for(j in 1:length(parsed_list[[i]])){
+    for(k in 3:length(na.omit(match(colnames(MS_file), names(parsed_list[[i]][j]))))){
+      ifelse(names(parsed_list[[i]][j])%in%colnames(MS_file[k]), MS_file[[i]][which(names(parsed_list[[i]][j])%in%colnames(MS_file[k])==TRUE)]<-cbind(position_parsed[[i]][,1][match(MS_file[,k], position_parsed[[i]][,1])], position_parsed[[i]][,2][match(MS_file[,k], position_parsed[[i]][,1])]), NA)}}} 
+
+test<-NULL
+
+for(i in 1:length(MS_file[[3]])){
+  for(j in 1:length(position_parsed)){
+  test[[j]]<-position_parsed[[j]][2][MS_file[[3]][1]==position_parsed[[j]][1]]}}
 
 
-
-View(position_parsed[[1]][,2][match(MS_file[,3], position_parsed[[1]][,1]),drop=FALSE])
 
