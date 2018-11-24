@@ -3,6 +3,9 @@
 
 
 
+
+
+
 ##AA_atlas for HLA-A
 AA_atlas<-list()
 loci<-"A"
@@ -261,7 +264,14 @@ for(i in 1:length(variant_match)){
 for(f in 1:length(position_parsed)){
   for(g in 1:length(gdata[which(colnames(gdata)%in%position_parsed[[f]][,1])])){
     for(h in 1:nrow(gdata)){
-      variant_match[[g]][[h]][[f]]<-subset(position_parsed[[f]][3], position_parsed[[f]][2]==gdata[which(colnames(gdata)%in%position_parsed[[f]][,1])][g][h,])}}}
+      variant_match[[g]][[h]][[f]]<-subset(position_parsed[[f]][3], position_parsed[[f]][2]==gdata[which(colnames(gdata)%in%position_parsed[[f]][,1])][g][h,])}
+  }}
+
+#removes elements with zero rows (i.e. no matches)
+for(f in 1:length(position_parsed)){
+  for(g in 1:length(gdata[which(colnames(gdata)%in%position_parsed[[f]][,1])])){
+    for(h in 1:nrow(gdata)){
+      variant_match[[g]][[h]]<-variant_match[[g]][[h]][sapply(variant_match[[g]][[h]], nrow)>0]}}}
 
 
 #function to count spaces in between regions of interest
@@ -281,4 +291,6 @@ countSpaces <- function(x){
   }
   coll
 }
+
+
 
