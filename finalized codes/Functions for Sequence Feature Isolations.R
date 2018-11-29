@@ -105,13 +105,23 @@ CWDverify <- function(){
   CWD$data
 }
 
+
+#for file merging
+filemerge <- function(filepath, columnnames, skip, clip){
+  filenames=list.files(path=filepath, full.names=TRUE)
+  datalist = lapply(filenames, function(x){read.csv(file=x,header=FALSE, stringsAsFactors=FALSE, skip=skip, col.names = columnnames)})
+  datalist<-Reduce(function(x,y) {merge(x,y,all=TRUE)}, datalist)
+  datalist<-head(datalist,nrow(datalist)-(clip*length(filenames)))
+  return(datalist)}
+
 #for identifying CWD alleles and identifying each allele's unique allele ID 
 ##optional usage for alleles with CWD alleles (i.e. HLA)
 #users looking at other genes that do not have CWD documentation need not use this function
-cwdID <- function(allelelistFile,gfefiles) {
+cwdID <- function(allelelistFile,gfeDirPath) {
   hlaacc<-read.csv(allelelistFile, header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
-  hladf<-gfefiles
+  hladf<-filemerge(gfeDirPath, c("allelename", "gfe"), skip=3, clip=1)
   hladf$alleleID<-hlaacc$AlleleID[match(hladf$allelename, paste("HLA",hlaacc$Allele,sep="-"))] 
+  cwdalleles<-CWDverify()
   hladf$CWD<-ifelse(hladf$alleleID %in% cwdalleles$Accession, "CWD", "NON-CWD")
   return(hladf)}
 
