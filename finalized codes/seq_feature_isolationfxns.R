@@ -117,13 +117,14 @@ filemerge <- function(filepath, columnnames, skip, clip){
 #for identifying CWD alleles and identifying each allele's unique allele ID 
 ##optional usage for alleles with CWD alleles (i.e. HLA)
 #users looking at other genes that do not have CWD documentation need not use this function
-cwdID <- function(allelelistFile,gfeDirPath) {
+cwdID <- function(allelelistFile, gfefiles) {
   hlaacc<-read.csv(allelelistFile, header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
-  hladf<-filemerge(gfeDirPath, c("allelename", "gfe"), skip=3, clip=1)
+  hladf<-gfefiles
   hladf$alleleID<-hlaacc$AlleleID[match(hladf$allelename, paste("HLA",hlaacc$Allele,sep="-"))] 
   cwdalleles<-CWDverify()
   hladf$CWD<-ifelse(hladf$alleleID %in% cwdalleles$Accession, "CWD", "NON-CWD")
   return(hladf)}
+
 
 ##function for reading all BSG files in, combines them into a single, multi-locus dataframe
 multiFileread <- function(filepath, columnnames, skip, clip){
@@ -176,6 +177,7 @@ BDgenotypeconversion<-function(genotypedata, allelefiles, gfefiles){
                                  ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"),)]=="CWD",
                                         hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))], ifelse(hlamerged$CWD[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))]=="NON-CWD", hlamerged$GFEs[match(bigdawghladata[,i], paste(gsub(".*[HLA-]([^*]+)[*].*", "\\1", hlamerged$allelename), paste(sapply(hlafields, "[", 1), sapply(hlafields, "[", 2), sep=":"), sep="*"))], NA)),NA)}
     return(bigdawghladata)} else {print("Error: Unrecognized filename suffix. Stopping BDgenotypeconversion()")}}
+
 
 ###########BEGIN SCRIPT for customGFEgenerator()
 
