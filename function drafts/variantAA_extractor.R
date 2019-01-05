@@ -1,7 +1,7 @@
 #variantAA_extractor function
-#V 0.1
+#V 0.2
 #By: L Tran
-#12/19/18
+#01/04/19
 
 
 ##Source Files
@@ -88,9 +88,10 @@ CWDverify <- function(){
   CWD$data
 }
 
-
 load("AA_atlas.rda")
 
+
+###BEGIN SCRIPT FOR variantAAextractor
 variantAAextractor<-function(loci,genotypefiles){
   
   #reads in genotype data  
@@ -102,370 +103,365 @@ variantAAextractor<-function(loci,genotypefiles){
     gdata[gdata==""]<-NA
     gdata[[i]]<-ifelse(is.na(gdata[[i]])==FALSE, paste(colnames(gdata[i]),gdata[,i],sep="*"), NA)}
   
-#creates empty variables for future for loops
-start<-end<-alignment<-list()
-
-#creates empty variables where each element is named after the used loci 
-
-#empty variables for correspondence table 
-corr_table<-cols<-downloaded_segments<-w<-alignment_positions<-alignment_length<-alignment_start<-prot_extractions<-refblock_number<-end_char<-space_diff<-
   
-  #empty variables for exon_extractor function   
-  geno_exonlist<-missing_geno_output<-missing_geno<-rep_variantAA<-mastertablecols<-mastertable<-position_parsed<-nonCWD_checked<-nonCWDtrunc<-singleAA_exon<-singleAA_alleles<-pastedAAseq<-columns<-all_gdata<-genotype_variants<-geno_alleles<-AA_segments<-AA_aligned <-refexon<-pepsplit<-alignment<-exonlist<- sapply(loci, function(x) NULL)
-
-
-
-for(i in 1:length(loci)){
-  #downloads relevant locus alignment file -- readLines allows for space preservation, which is important in
-  #finding where the alignment sequence starts 
-  alignment[[loci[i]]] <- readLines(paste("https://raw.githubusercontent.com/ANHIG/IMGTHLA/Latest/alignments/",paste(ifelse(loci[[i]]=="DRB1","DRB",loci[[i]]),"_prot.txt",sep=""),sep=""),-1,ok=TRUE,skipNul = FALSE)
-  #alters alignment file by cutting out non-pertinent information 
-  alignment[[loci[i]]] <- head(alignment[[loci[i]]],-3)
-  alignment[[loci[i]]] <- tail(alignment[[loci[i]]],-7)
+  #creates empty variables for future for loops
+  start<-end<-alignment<-list()
   
-  #see countSpaces function at the end of this script
-  #Counts difference between Prot to -30 and beginning of Prot to -30 + 1 due to zero number indexing to find where
-  #the alignment sequence actually starts 
-  space_diff[[loci[i]]]<-(nchar(strsplit(alignment[[loci[i]]][3], " ")[[1]][2])+countSpaces(alignment[[loci[i]]][3])[2]+1)-countSpaces(alignment[[loci[i]]][2])[1]
+  #creates empty variables where each element is named after the used loci 
   
-  
-  #reduces repeated whitespace in alignment file and removes rows with empty values for proper
-  #start and stop subsetting 
-  alignment[[loci[i]]] <-str_squish(alignment[[loci[i]]])
-  alignment[[loci[i]]] <-alignment[[loci[i]]][-which(alignment[[loci[i]]] == "")]
-  
-  #determines positions of "Prot" and the end of that reference block segment
-  start[[loci[i]]]<-as.numeric(grep("Prot", alignment[[loci[i]]]))
-  
-  end[[loci[i]]] <- as.numeric(c(start[[loci[i]]][2:length(start[[loci[i]]])]-1,length(alignment[[loci[i]]])))
-  
-  #counts number of characters in the very last allele to add onto the last Prot enumeration block
-  #to obtain end length 
-  end_char[[loci[i]]]<-nchar(sapply(strsplit(gsub(" ", "", sub(" ", "~", str_squish(tail(alignment[[loci[i]]], 1)))), "~"), "[", 2))-1
-  
-  #extracts rows with "Prot" and reference sequence position information 
-  #extracts only relevant reference sequence positions
-  #NOTE: the first row containing "Prot" contains two numbers -- -30 and 1 -- where only -30, is extracted,
-  #as the actual sequence start will always be 1 
-  for (j in 1:length(start[[loci[i]]])){
+  #empty variables for correspondence table 
+  corr_table<-cols<-downloaded_segments<-w<-alignment_positions<-alignment_length<-alignment_start<-prot_extractions<-refblock_number<-end_char<-space_diff<-
     
-    prot_extractions[[loci[i]]][j]<-strsplit(alignment[[loci[i]]][start[[loci[i]]][j]], " ")
+    #empty variables for exon_extractor function   
+    variantAApositions<-geno_exonlist<-missing_geno_output<-missing_geno<-rep_variantAA<-mastertablecols<-mastertable<-position_parsed<-nonCWD_checked<-nonCWDtrunc<-singleAA_exon<-singleAA_alleles<-pastedAAseq<-columns<-all_gdata<-genotype_variants<-geno_alleles<-AA_segments<-AA_aligned <-refexon<-pepsplit<-alignment<-exonlist<- sapply(loci, function(x) NULL)
+  
+  
+  
+  for(i in 1:length(loci)){
+    #downloads relevant locus alignment file -- readLines allows for space preservation, which is important in
+    #finding where the alignment sequence starts 
+    alignment[[loci[i]]] <- readLines(paste("https://raw.githubusercontent.com/ANHIG/IMGTHLA/Latest/alignments/",paste(ifelse(loci[[i]]=="DRB1","DRB",loci[[i]]),"_prot.txt",sep=""),sep=""),-1,ok=TRUE,skipNul = FALSE)
+    #alters alignment file by cutting out non-pertinent information 
+    alignment[[loci[i]]] <- head(alignment[[loci[i]]],-3)
+    alignment[[loci[i]]] <- tail(alignment[[loci[i]]],-7)
     
-    refblock_number[[loci[i]]][j]<-as.numeric(sapply(prot_extractions[[loci[i]]][j], "[", 2))
+    #see countSpaces function at the end of this script
+    #Counts difference between Prot to -30 and beginning of Prot to -30 + 1 due to zero number indexing to find where
+    #the alignment sequence actually starts 
+    space_diff[[loci[i]]]<-(nchar(strsplit(alignment[[loci[i]]][3], " ")[[1]][2])+countSpaces(alignment[[loci[i]]][3])[2]+1)-countSpaces(alignment[[loci[i]]][2])[1]
     
     
-    #determines the alignment start by adding -30 to the difference between white spaces found above 
-    alignment_start[[loci[i]]]<-refblock_number[[loci[i]]][1]+space_diff[[loci[i]]]
+    #reduces repeated whitespace in alignment file and removes rows with empty values for proper
+    #start and stop subsetting 
+    alignment[[loci[i]]] <-str_squish(alignment[[loci[i]]])
+    alignment[[loci[i]]] <-alignment[[loci[i]]][-which(alignment[[loci[i]]] == "")]
     
-    #determines alignment length based on the last Prot enumeration + the number of characters in the last row 
-    alignment_length[[loci[i]]]<-as.numeric(tail(refblock_number[[loci[i]]], 1))+end_char[[loci[i]]]}
-  
-  
-  #pastes alignment_start to alignment_length together in sequential order, with inDels accounted for 
-  #captures output as "w"
-  if(loci[[i]]=="A"){
-    w$A<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
-  if(loci[[i]]=="B"){
-    w$B<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
-  if(loci[[i]]=="C"){
-    w$C<-capture.output(cat(alignment_start[[loci[i]]]:(as.numeric(tail(refblock_number[[loci[i]]],1))-(alignment_start[[loci[i]]])), paste("inDel", seq(1:6), sep=""), (as.numeric(tail(refblock_number[[loci[i]]],1))-alignment_start[[loci[i]]]+1):alignment_length[[loci[i]]]))}
-  if(loci[[i]]=="DRB1"){
-    w$DRB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
-  if(loci[[i]]=="DQB1"){
-    w$DQB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
-  if(loci[[i]]=="DPB1"){
-    w$DPB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
-  
-  
-  ##stopped here -- figured out DRB discrepancy between corr table and alignment position 
-  #splits string formed by cat for separate character variables
-  alignment_positions[[loci[i]]]<-as.character(unlist(strsplit(w[[loci[i]]], " ")))
-  
-  
-  #eliminates "0", as the alignment sequence from ANHIG does not contain 0
-  alignment_positions[[loci[i]]]<-alignment_positions[[loci[i]]][-which(alignment_positions[[loci[i]]] == 0)]
-  
-  
-  #closes all white space in the alignment file, except for the white space separating the allele and peptide sequence
-  alignment[[loci[i]]] <-paste(substr(alignment[[loci[i]]],1,regexpr(" ",text = alignment[[loci[i]]],fixed = TRUE)), gsub(" ","",substr(alignment[[loci[i]]],regexpr(" ",text = alignment[[loci[i]]],fixed = TRUE),nchar(alignment[[loci[i]]]))),sep = "")
-  
-  #string splits at white spaces to yield allele and peptide sequences
-  alignment[[loci[i]]]  <- strsplit(alignment[[loci[i]]]," ", fixed=T)
-  
-  #binds the previously split strings by row and renames columns to "alleles" and "pepseq"
-  alignment[[loci[i]]] <- do.call(rbind,alignment[[loci[i]]])
-  
-  alignment[[loci[i]]][which(alignment[[loci[i]]][,1]==alignment[[loci[i]]][,2]),2] <- ""
-  
-  colnames(alignment[[loci[i]]])<-c(paste(loci[[i]], "alleles", sep="_"), "pepseq")
-  
-  #due to ANHIG formatting, cases where an allele contains newly reference peptide sequences will not 
-  #contain the same number of rows as previous reference peptide blocks
-  #this for loop is invoked to add "."for all other alleles for each character in the newly reference peptide
-  #to preserve structural integrity 
-  for(k in 1:length(start[[loci[i]]])){
-    if(nrow(alignment[[i]][start[[loci[i]]][k]:end[[loci[i]]][k],])!=nrow(alignment[[loci[i]]][start[[loci[i]]][1]:end[[loci[i]]][1],])){
-      x<-as.data.frame(alignment[[loci[i]]][,1][start[[loci[i]]][1]:end[[loci[i]]][1]][-c(1,2)], stringsAsFactors = F)
-      colnames(x)<-paste(loci[[i]], "alleles", sep="_")
-      x<-cbind.data.frame(x, pepseq=as.character(paste(rep(".", nchar(tail(alignment[[loci[i]]][,2], 1))), collapse = "")), stringsAsFactors=FALSE)
-      y<-data.frame(tail(alignment[[loci[i]]],1), stringsAsFactors = F)
-      x$pepseq[match(y[,1], x[,1])]<-y$pepseq
-      alignment[[loci[i]]]<-as.matrix(rbind(head(alignment[[loci[i]]], -1), x))
-      start[[loci[i]]]<-as.numeric(grep("Prot", alignment[[loci[i]]]))
-      end[[loci[i]]] <- as.numeric(c(start[[loci[i]]][2:length(start[[loci[i]]])]-1,nrow(alignment[[loci[i]]])))}}
-  
-  #if a locus has extra formatting, resulting in unqeual rows, start and end will be updated to reflect subsetting
-  #if a locus has no extra formatting, start and end will remain the same, as procured by earlier code
-  for(e in 1:length(start[[loci[i]]])){
-    AA_segments[[loci[i]]]<-cbind(AA_segments[[loci[i]]], alignment[[loci[i]]][start[[loci[i]]][e]:end[[loci[i]]][e],])}
-  
-  #removes first two rows containing AA position and "Prot"
-  AA_segments[[loci[i]]] <- AA_segments[[loci[i]]][-c(1,2),]
-  
-  #designates columns to be combined as every other so allele names are not included
-  #in pasting all the amino acid sequences together 
-  cols<-seq(0, ncol(AA_segments[[loci[i]]]), by=2)
-  AA_segments[[loci[i]]]<-cbind(AA_segments[[loci[i]]][,1], apply(AA_segments[[loci[i]]][,cols], 1 ,paste, collapse = ""))
-  
-  #creates a new matrix with the number of columns equal to the number of characters in the reference sequence 
-  corr_table[[loci[i]]]<-matrix(, nrow = 2, ncol = as.numeric(nchar(AA_segments[[loci[i]]][,2][1])))
-  
-  #contains actual sequence information
-  corr_table[[loci[i]]][1,]<-(1:as.numeric(nchar(AA_segments[[loci[i]]][,2][1])))
-  
-  #contains alignment sequence information 
-  corr_table[[loci[i]]][2,]<-alignment_positions[[loci[i]]]
-  
-  #string splits to extract locus in the allele name
-  #assigns to new variable "AA_aligned"
-  AA_aligned[[loci[i]]]<- as.matrix(do.call(rbind,strsplit(AA_segments[[loci[i]]][,1],"[*]")))
-  
-  #adds a new column of pasted locus and trimmed two field alleles to AA_aligned
-  AA_aligned[[loci[i]]]<- cbind(AA_aligned[[loci[i]]], paste(AA_aligned[[loci[i]]][,1], apply(AA_aligned[[loci[i]]],MARGIN=c(1,2),FUN=GetField,Res=2)[,2], sep="*"))
-  
-  #binds AA_aligned and AA_segments -- renames columns 
-  AA_segments[[loci[i]]] <- cbind(AA_aligned[[loci[i]]], AA_segments[[loci[i]]])
-  colnames(AA_segments[[loci[i]]]) <- c("locus", "full_allele", "trimmed_allele", "allele_name", "AAsequence")
-  
-  
-  #sets refexon to a reference peptide for each HLA locus based on the reference sequences in AA_segments 
-  refexon[[loci[i]]] <- rbind(AA_segments[[loci[i]]][1,])[which(rbind(AA_segments[[loci[i]]][1,])[,"locus"]==loci[[i]]),'AAsequence']
-  
-  #splits AA_sequence column at every amino acid, resulting in a list of split amino acids for each row
-  pepsplit[[loci[i]]] <- sapply(AA_segments[[loci[i]]][,"AAsequence"],strsplit,split="*")
-  
-  #fills in space with NA for alleles with premature termination to make it the same number of characters
-  #as the reference sequence 
-  pepsplit[[loci[i]]]<- lapply(pepsplit[[loci[i]]],function(x) c(x,rep("NA",nchar(refexon[[loci[i]]])-length(x))))
-  
-  #binds pep_split together by element in its previous list form by row
-  pepsplit[[loci[i]]]<- do.call(rbind,pepsplit[[loci[i]]])
-  
-  #nullifies row names 
-  rownames(pepsplit[[loci[i]]]) <- NULL
-  
-  #binds all columns together to form desired ouput, as described above
-  AA_segments[[loci[i]]] <- cbind.data.frame(AA_segments[[loci[i]]][,1:4],pepsplit[[loci[i]]], stringsAsFactors=FALSE)
-  
-  #sets appropriate column names, where each amino acid has its respective position based on the
-  #alignment sequence 
-  colnames(AA_segments[[loci[i]]]) <- c("locus","allele","trimmed_allele","allele_name", corr_table[[loci[i]]][2,])
-  
-  #distributes  reference sequence from row 1
-  #into all other rows, if they contain a "-"
-  #amino acids with changes will not be impacted
-  for(k in 5:ncol(AA_segments[[loci[i]]])) {
-    AA_segments[[loci[i]]][,k][which(AA_segments[[loci[i]]][,k]=="-")] <- AA_segments[[loci[i]]][,k][1]}  
-  
-  
-  #for loop for subsetting AA_sequences by matching exon start and end cells from AA_atlas
-  #column names of AA_sequences, which are AA positions
-  #subsets relevant amino acids, inputting them into a list
-  #binds previous columns with locus, allele, trimmed allele, and allele name information
-  
-  #subsets first exon for all loci
-  #HLA-A, B, and C's first exons end at -1 (i.e exon 2 begins at position 1), so 
-  #the matching end atlas coordinate must be substracted by 2, since there is 
-  #no position zero in the alignment
-  
-  #HLA-DQB1, DRB1, and DPB1's first exon ends at a number other than -1 
-  #(i.e. exon 2 begins at position #2<, the matching end atlas coordinate is 
-  #only subtracted by 1, since we do not need to
-  #account for there being no position zero in the alignment)
-  if(loci[[i]]=="A"){
-    exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-2), colnames(AA_segments[[loci[i]]]))])}
-  if(loci[[i]]=="B"){
-    exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-2), colnames(AA_segments[[loci[i]]]))])}
-  if(loci[[i]]=="C"){
-    exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-2), colnames(AA_segments[[loci[i]]]))])}
-  if(loci[[i]]=="DRB1"){
-    exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
-  if(loci[[i]] == "DQB1"){
-    exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
-  if(loci[[i]] == "DPB1"){
-    exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
-  
-  #subsets last exon for loci 
-  exonlist[[loci[i]]][[nrow(AA_atlas[[match(loci[[i]],names(AA_atlas))]])+1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][match(AA_atlas[[match(loci[[i]],names(AA_atlas))]][[2]][[length(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]])]]:names(AA_segments[[loci[i]]][ncol(AA_segments[[loci[i]]])]), colnames(AA_segments[[loci[i]]]))])
-  
-  
-  #subsets N-1 exons 
-  for(j in 1:(nrow(AA_atlas[[match(loci[i],names(AA_atlas))]])-1)){
-    exonlist[[loci[i]]][[j+1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,match(AA_atlas[match(loci[i],names(AA_atlas))][[loci[i]]][[2]][[j]], colnames(AA_segments[[loci[i]]])):match(as.numeric(AA_atlas[match(loci[i],names(AA_atlas))][[loci[i]]][[2]][[j+1]]),colnames(AA_segments[[loci[i]]]))])}
-  
-  
-  #for loop for subsetting exonlist alleles to only those found in genotype data
-  #focuses on subsetting via the third column in exonlist, which consists of trimmed_allele data 
-  #variable e in for loop represents number of columns per locus, which is how BIGDAWG input data is formatted
-  for(d in 1:length(exonlist[[loci[i]]])){
-    for(e in 1:2){
+    #determines positions of "Prot" and the end of that reference block segment
+    start[[loci[i]]]<-as.numeric(grep("Prot", alignment[[loci[i]]]))
+    
+    end[[loci[i]]] <- as.numeric(c(start[[loci[i]]][2:length(start[[loci[i]]])]-1,length(alignment[[loci[i]]])))
+    
+    #counts number of characters in the very last allele to add onto the last Prot enumeration block
+    #to obtain end length 
+    end_char[[loci[i]]]<-nchar(sapply(strsplit(gsub(" ", "", sub(" ", "~", str_squish(tail(alignment[[loci[i]]], 1)))), "~"), "[", 2))-1
+    
+    #extracts rows with "Prot" and reference sequence position information 
+    #extracts only relevant reference sequence positions
+    #NOTE: the first row containing "Prot" contains two numbers -- -30 and 1 -- where only -30, is extracted,
+    #as the actual sequence start will always be 1 
+    for (j in 1:length(start[[loci[i]]])){
       
-      #finds which exonlist alleles are present in genotype data alleles 
-      geno_alleles[[loci[i]]][[e]]<-exonlist[[loci[i]]][[d]][,3][which(exonlist[[loci[i]]][[d]][,3] %in% gdata[which(colnames(gdata)%in%loci[[i]]==TRUE)][,e]==TRUE)]
-    }}
-  
-  #merges both sets of unique alleles found in exonlist and gets rid of duplicates 
-  geno_alleles[[loci[i]]]<-unique(append(geno_alleles[[loci[i]]][[1]], geno_alleles[[loci[i]]][[2]]))
-  
-  #creates a variable geno_exonlist, with the number of elements equal to how many exons there are for an allele
-  geno_exonlist[[loci[i]]]<-sapply(exonlist[[loci[i]]], function(x) NULL)
-  
-  #reads in 3310 HLA alleles 
-  HLA_alleles<-read.csv("Allelelist.3310.txt", header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
-  
-  #compiles a list of CWD alleles and inserts them into a new variable
-  CWDalleles<-CWDverify()
-  
-  #makes a list of lists based on the number of exons for a given locus 
-  nonCWD_checked[[loci[[i]]]]<-singleAA_exon[[loci[[i]]]]<-singleAA_alleles[[loci[[i]]]]<-pastedAAseq[[loci[[i]]]]<-columns[[loci[[i]]]]<-all_gdata[[loci[[i]]]]<-nonCWDtrunc[[loci[[i]]]]<-genotype_variants[[loci[[i]]]]<-sapply(exonlist[[loci[[i]]]], function(x) NULL)
-  
-  #subsets exonlist alleles to those found in genotype data and inserts them into a new list
-  #geno_exonlist
-  for(d in 1:length(exonlist[[loci[i]]])){
-    geno_exonlist[[loci[i]]][[d]]<-subset(exonlist[[loci[i]]][[d]], exonlist[[loci[i]]][[d]][,3]%in%geno_alleles[[loci[i]]])
-    geno_exonlist[[loci[i]]][[d]]<-cbind.data.frame("accessions"=HLA_alleles$AlleleID[match(geno_exonlist[[loci[i]]][[d]]$allele_name, HLA_alleles$Allele)], geno_exonlist[[loci[i]]][[d]], stringsAsFactors=FALSE)
-    geno_exonlist[[loci[i]]][[d]]<-cbind.data.frame("CWD"=ifelse(geno_exonlist[[loci[i]]][[d]]$accessions %in% CWDalleles$Accession, "CWD", "NON-CWD"), geno_exonlist[[loci[i]]][[d]], stringsAsFactors=FALSE)
-    
-    
-    
-    #subsets geno_exonlist to only containing CWD alleles via accession number
-    #and stores it to a new variable, all_gdata
-    #NOTE: all g_data will be a master copy of all variants of genotype data alleles
-    if(any(geno_exonlist[[loci[i]]][[d]]$CWD=="CWD")){
-      all_gdata[[loci[i]]][[d]]<-na.omit(geno_exonlist[[loci[i]]][[d]][geno_exonlist[[loci[i]]][[d]]$accessions%in%CWDalleles$Accession,])}
-    
-    #compares whether all truncated alleles in all_gdata are in geno_alleles
-    #returns truncated alleles that are not CWD, but that are present in geno_alleles
-    nonCWDtrunc[[loci[i]]]<-cbind(geno_alleles[[loci[i]]]%in%all_gdata[[loci[i]]][[d]]$trimmed_allele, geno_alleles[[loci[i]]])[which(cbind(geno_alleles[[loci[i]]], geno_alleles[[loci[i]]]%in%all_gdata[[loci[i]]][[d]]$trimmed_allele)==FALSE)]
-    
-    #obtains non-CWD genotype variants in the genotype dataset
-    for(b in 1:length(nonCWDtrunc[[loci[i]]])){
-      genotype_variants[[loci[i]]][[d]][[b]]<-subset(geno_exonlist[[loci[i]]][[d]], geno_exonlist[[loci[i]]][[d]]$trimmed_allele==nonCWDtrunc[[loci[i]]][[b]])
+      prot_extractions[[loci[i]]][j]<-strsplit(alignment[[loci[i]]][start[[loci[i]]][j]], " ")
       
-      #if the non-CWD allele only has one variant, bind it to all_gdata
-      if(nrow(genotype_variants[[loci[i]]][[d]][[b]])==1){all_gdata[[loci[[i]]]][[d]]<-rbind(all_gdata[[loci[[i]]]][[d]],genotype_variants[[loci[[i]]]][[d]][[b]])}
+      refblock_number[[loci[i]]][j]<-as.numeric(sapply(prot_extractions[[loci[i]]][j], "[", 2))
       
-      #if the non-CWD allele has more than one variant, extract number of amino acid columns
-      #present for a given exon 
-      if(nrow(genotype_variants[[loci[i]]][[d]][[b]])>1){
-        columns[[loci[i]]][[d]]<-7:length(genotype_variants[[loci[i]]][[d]][[b]])
+      
+      #determines the alignment start by adding -30 to the difference between white spaces found above 
+      alignment_start[[loci[i]]]<-refblock_number[[loci[i]]][1]+space_diff[[loci[i]]]
+      
+      #determines alignment length based on the last Prot enumeration + the number of characters in the last row 
+      alignment_length[[loci[i]]]<-as.numeric(tail(refblock_number[[loci[i]]], 1))+end_char[[loci[i]]]}
+    
+    
+    #pastes alignment_start to alignment_length together in sequential order, with inDels accounted for 
+    #captures output as "w"
+    if(loci[[i]]=="A"){
+      w$A<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    if(loci[[i]]=="B"){
+      w$B<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    if(loci[[i]]=="C"){
+      w$C<-capture.output(cat(alignment_start[[loci[i]]]:(as.numeric(tail(refblock_number[[loci[i]]],1))-(alignment_start[[loci[i]]])), paste("inDel", seq(1:6), sep=""), (as.numeric(tail(refblock_number[[loci[i]]],1))-alignment_start[[loci[i]]]+1):alignment_length[[loci[i]]]))}
+    if(loci[[i]]=="DRB1"){
+      w$DRB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    if(loci[[i]]=="DQB1"){
+      w$DQB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    if(loci[[i]]=="DPB1"){
+      w$DPB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    
+    
+    ##stopped here -- figured out DRB discrepancy between corr table and alignment position 
+    #splits string formed by cat for separate character variables
+    alignment_positions[[loci[i]]]<-as.character(unlist(strsplit(w[[loci[i]]], " ")))
+    
+    
+    #eliminates "0", as the alignment sequence from ANHIG does not contain 0
+    alignment_positions[[loci[i]]]<-alignment_positions[[loci[i]]][-which(alignment_positions[[loci[i]]] == 0)]
+    
+    
+    #closes all white space in the alignment file, except for the white space separating the allele and peptide sequence
+    alignment[[loci[i]]] <-paste(substr(alignment[[loci[i]]],1,regexpr(" ",text = alignment[[loci[i]]],fixed = TRUE)), gsub(" ","",substr(alignment[[loci[i]]],regexpr(" ",text = alignment[[loci[i]]],fixed = TRUE),nchar(alignment[[loci[i]]]))),sep = "")
+    
+    #string splits at white spaces to yield allele and peptide sequences
+    alignment[[loci[i]]]  <- strsplit(alignment[[loci[i]]]," ", fixed=T)
+    
+    #binds the previously split strings by row and renames columns to "alleles" and "pepseq"
+    alignment[[loci[i]]] <- do.call(rbind,alignment[[loci[i]]])
+    
+    alignment[[loci[i]]][which(alignment[[loci[i]]][,1]==alignment[[loci[i]]][,2]),2] <- ""
+    
+    colnames(alignment[[loci[i]]])<-c(paste(loci[[i]], "alleles", sep="_"), "pepseq")
+    
+    #due to ANHIG formatting, cases where an allele contains newly reference peptide sequences will not 
+    #contain the same number of rows as previous reference peptide blocks
+    #this for loop is invoked to add "."for all other alleles for each character in the newly reference peptide
+    #to preserve structural integrity 
+    for(k in 1:length(start[[loci[i]]])){
+      if(nrow(alignment[[i]][start[[loci[i]]][k]:end[[loci[i]]][k],])!=nrow(alignment[[loci[i]]][start[[loci[i]]][1]:end[[loci[i]]][1],])){
+        x<-as.data.frame(alignment[[loci[i]]][,1][start[[loci[i]]][1]:end[[loci[i]]][1]][-c(1,2)], stringsAsFactors = F)
+        colnames(x)<-paste(loci[[i]], "alleles", sep="_")
+        x<-cbind.data.frame(x, pepseq=as.character(paste(rep(".", nchar(tail(alignment[[loci[i]]][,2], 1))), collapse = "")), stringsAsFactors=FALSE)
+        y<-data.frame(tail(alignment[[loci[i]]],1), stringsAsFactors = F)
+        x$pepseq[match(y[,1], x[,1])]<-y$pepseq
+        alignment[[loci[i]]]<-as.matrix(rbind(head(alignment[[loci[i]]], -1), x))
+        start[[loci[i]]]<-as.numeric(grep("Prot", alignment[[loci[i]]]))
+        end[[loci[i]]] <- as.numeric(c(start[[loci[i]]][2:length(start[[loci[i]]])]-1,nrow(alignment[[loci[i]]])))}}
+    
+    #if a locus has extra formatting, resulting in unqeual rows, start and end will be updated to reflect subsetting
+    #if a locus has no extra formatting, start and end will remain the same, as procured by earlier code
+    for(e in 1:length(start[[loci[i]]])){
+      AA_segments[[loci[i]]]<-cbind(AA_segments[[loci[i]]], alignment[[loci[i]]][start[[loci[i]]][e]:end[[loci[i]]][e],])}
+    
+    #removes first two rows containing AA position and "Prot"
+    AA_segments[[loci[i]]] <- AA_segments[[loci[i]]][-c(1,2),]
+    
+    #designates columns to be combined as every other so allele names are not included
+    #in pasting all the amino acid sequences together 
+    cols<-seq(0, ncol(AA_segments[[loci[i]]]), by=2)
+    AA_segments[[loci[i]]]<-cbind(AA_segments[[loci[i]]][,1], apply(AA_segments[[loci[i]]][,cols], 1 ,paste, collapse = ""))
+    
+    #creates a new matrix with the number of columns equal to the number of characters in the reference sequence 
+    corr_table[[loci[i]]]<-matrix(, nrow = 2, ncol = as.numeric(nchar(AA_segments[[loci[i]]][,2][1])))
+    
+    #contains actual sequence information
+    corr_table[[loci[i]]][1,]<-(1:as.numeric(nchar(AA_segments[[loci[i]]][,2][1])))
+    
+    #contains alignment sequence information 
+    corr_table[[loci[i]]][2,]<-alignment_positions[[loci[i]]]
+    
+    #string splits to extract locus in the allele name
+    #assigns to new variable "AA_aligned"
+    AA_aligned[[loci[i]]]<- as.matrix(do.call(rbind,strsplit(AA_segments[[loci[i]]][,1],"[*]")))
+    
+    #adds a new column of pasted locus and trimmed two field alleles to AA_aligned
+    AA_aligned[[loci[i]]]<- cbind(AA_aligned[[loci[i]]], paste(AA_aligned[[loci[i]]][,1], apply(AA_aligned[[loci[i]]],MARGIN=c(1,2),FUN=GetField,Res=2)[,2], sep="*"))
+    
+    #binds AA_aligned and AA_segments -- renames columns 
+    AA_segments[[loci[i]]] <- cbind(AA_aligned[[loci[i]]], AA_segments[[loci[i]]])
+    colnames(AA_segments[[loci[i]]]) <- c("locus", "full_allele", "trimmed_allele", "allele_name", "AAsequence")
+    
+    
+    #sets refexon to a reference peptide for each HLA locus based on the reference sequences in AA_segments 
+    refexon[[loci[i]]] <- rbind(AA_segments[[loci[i]]][1,])[which(rbind(AA_segments[[loci[i]]][1,])[,"locus"]==loci[[i]]),'AAsequence']
+    
+    #splits AA_sequence column at every amino acid, resulting in a list of split amino acids for each row
+    pepsplit[[loci[i]]] <- sapply(AA_segments[[loci[i]]][,"AAsequence"],strsplit,split="*")
+    
+    #fills in space with NA for alleles with premature termination to make it the same number of characters
+    #as the reference sequence 
+    pepsplit[[loci[i]]]<- lapply(pepsplit[[loci[i]]],function(x) c(x,rep("NA",nchar(refexon[[loci[i]]])-length(x))))
+    
+    #binds pep_split together by element in its previous list form by row
+    pepsplit[[loci[i]]]<- do.call(rbind,pepsplit[[loci[i]]])
+    
+    #nullifies row names 
+    rownames(pepsplit[[loci[i]]]) <- NULL
+    
+    #binds all columns together to form desired ouput, as described above
+    AA_segments[[loci[i]]] <- cbind.data.frame(AA_segments[[loci[i]]][,1:4],pepsplit[[loci[i]]], stringsAsFactors=FALSE)
+    
+    #sets appropriate column names, where each amino acid has its respective position based on the
+    #alignment sequence 
+    colnames(AA_segments[[loci[i]]]) <- c("locus","allele","trimmed_allele","allele_name", corr_table[[loci[i]]][2,])
+    
+    #distributes  reference sequence from row 1
+    #into all other rows, if they contain a "-"
+    #amino acids with changes will not be impacted
+    for(k in 5:ncol(AA_segments[[loci[i]]])) {
+      AA_segments[[loci[i]]][,k][which(AA_segments[[loci[i]]][,k]=="-")] <- AA_segments[[loci[i]]][,k][1]}  
+    
+    
+    #for loop for subsetting AA_sequences by matching exon start and end cells from AA_atlas
+    #column names of AA_sequences, which are AA positions
+    #subsets relevant amino acids, inputting them into a list
+    #binds previous columns with locus, allele, trimmed allele, and allele name information
+    
+    #subsets first exon for all loci
+    #HLA-A, B, and C's first exons end at -1 (i.e exon 2 begins at position 1), so 
+    #the matching end atlas coordinate must be substracted by 2, since there is 
+    #no position zero in the alignment
+    
+    #HLA-DQB1, DRB1, and DPB1's first exon ends at a number other than -1 
+    #(i.e. exon 2 begins at position #2<, the matching end atlas coordinate is 
+    #only subtracted by 1, since we do not need to
+    #account for there being no position zero in the alignment)
+    if(loci[[i]]=="A"){
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-2), colnames(AA_segments[[loci[i]]]))])}
+    if(loci[[i]]=="B"){
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-2), colnames(AA_segments[[loci[i]]]))])}
+    if(loci[[i]]=="C"){
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-2), colnames(AA_segments[[loci[i]]]))])}
+    if(loci[[i]]=="DRB1"){
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
+    if(loci[[i]] == "DQB1"){
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
+    if(loci[[i]] == "DPB1"){
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
+    
+    #subsets last exon for loci 
+    exonlist[[loci[i]]][[nrow(AA_atlas[[match(loci[[i]],names(AA_atlas))]])+1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][match(AA_atlas[[match(loci[[i]],names(AA_atlas))]][[2]][[length(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]])]]:names(AA_segments[[loci[i]]][ncol(AA_segments[[loci[i]]])]), colnames(AA_segments[[loci[i]]]))])
+    
+    
+    #subsets N-1 exons 
+    for(j in 1:(nrow(AA_atlas[[match(loci[i],names(AA_atlas))]])-1)){
+      exonlist[[loci[i]]][[j+1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,match(AA_atlas[match(loci[i],names(AA_atlas))][[loci[i]]][[2]][[j]], colnames(AA_segments[[loci[i]]])):match(as.numeric(AA_atlas[match(loci[i],names(AA_atlas))][[loci[i]]][[2]][[j+1]]),colnames(AA_segments[[loci[i]]]))])}
+    
+    
+    #for loop for subsetting exonlist alleles to only those found in genotype data
+    #focuses on subsetting via the third column in exonlist, which consists of trimmed_allele data 
+    #variable e in for loop represents number of columns per locus, which is how BIGDAWG input data is formatted
+    for(d in 1:length(exonlist[[loci[i]]])){
+      for(e in 1:2){
         
-        #if an exon for a non-CWD allele has more than one amino acid column, paste all the columns together to obtain
-        #the amino acid sequence which is stored in pastedAAseq
-        #pastedAAseq is evaluated to find which allele variant has the most complete sequence by counting the number of
-        #character, omitting * (notation for unknown amino acid)
-        #the allele with the most compelte sequence is bound to all_gdata
-        if(length(columns[[loci[i]]][[d]])>1){
-          pastedAAseq[[loci[i]]][[d]]<-apply(genotype_variants[[loci[i]]][[d]][[b]][ , columns[[loci[i]]][[d]]] , 1 , paste , collapse = "" )
-          all_gdata[[loci[i]]][[d]]<-rbind(all_gdata[[loci[i]]][[d]], genotype_variants[[loci[i]]][[d]][[b]][names(pastedAAseq[[loci[i]]][[d]][which.max(nchar(gsub("[*^]","",pastedAAseq[[loci[i]]][[d]])))]),])}
+        #finds which exonlist alleles are present in genotype data alleles 
+        geno_alleles[[loci[i]]][[e]]<-exonlist[[loci[i]]][[d]][,3][which(exonlist[[loci[i]]][[d]][,3] %in% gdata[which(colnames(gdata)%in%loci[[i]]==TRUE)][,e]==TRUE)]
+      }}
+    
+    #merges both sets of unique alleles found in exonlist and gets rid of duplicates 
+    geno_alleles[[loci[i]]]<-unique(append(geno_alleles[[loci[i]]][[1]], geno_alleles[[loci[i]]][[2]]))
+    
+    #creates a variable geno_exonlist, with the number of elements equal to how many exons there are for an allele
+    geno_exonlist[[loci[i]]]<-sapply(exonlist[[loci[i]]], function(x) NULL)
+    
+    #reads in 3310 HLA alleles 
+    HLA_alleles<-read.csv("Allelelist.3310.txt", header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
+    
+    #compiles a list of CWD alleles and inserts them into a new variable
+    CWDalleles<-CWDverify()
+    
+    #makes a list of lists based on the number of exons for a given locus 
+    nonCWD_checked[[loci[[i]]]]<-singleAA_exon[[loci[[i]]]]<-singleAA_alleles[[loci[[i]]]]<-pastedAAseq[[loci[[i]]]]<-columns[[loci[[i]]]]<-all_gdata[[loci[[i]]]]<-nonCWDtrunc[[loci[[i]]]]<-genotype_variants[[loci[[i]]]]<-sapply(exonlist[[loci[[i]]]], function(x) NULL)
+    
+    #subsets exonlist alleles to those found in genotype data and inserts them into a new list
+    #geno_exonlist
+    for(d in 1:length(exonlist[[loci[i]]])){
+      geno_exonlist[[loci[i]]][[d]]<-subset(exonlist[[loci[i]]][[d]], exonlist[[loci[i]]][[d]][,3]%in%geno_alleles[[loci[i]]])
+      geno_exonlist[[loci[i]]][[d]]<-cbind.data.frame("accessions"=HLA_alleles$AlleleID[match(geno_exonlist[[loci[i]]][[d]]$allele_name, HLA_alleles$Allele)], geno_exonlist[[loci[i]]][[d]], stringsAsFactors=FALSE)
+      geno_exonlist[[loci[i]]][[d]]<-cbind.data.frame("CWD"=ifelse(geno_exonlist[[loci[i]]][[d]]$accessions %in% CWDalleles$Accession, "CWD", "NON-CWD"), geno_exonlist[[loci[i]]][[d]], stringsAsFactors=FALSE)
+      
+      
+      
+      #subsets geno_exonlist to only containing CWD alleles via accession number
+      #and stores it to a new variable, all_gdata
+      #NOTE: all g_data will be a master copy of all variants of genotype data alleles
+      if(any(geno_exonlist[[loci[i]]][[d]]$CWD=="CWD")){
+        all_gdata[[loci[i]]][[d]]<-na.omit(geno_exonlist[[loci[i]]][[d]][geno_exonlist[[loci[i]]][[d]]$accessions%in%CWDalleles$Accession,])}
+      
+      #compares whether all truncated alleles in all_gdata are in geno_alleles
+      #returns truncated alleles that are not CWD, but that are present in geno_alleles
+      nonCWDtrunc[[loci[i]]]<-cbind(geno_alleles[[loci[i]]]%in%all_gdata[[loci[i]]][[d]]$trimmed_allele, geno_alleles[[loci[i]]])[which(cbind(geno_alleles[[loci[i]]], geno_alleles[[loci[i]]]%in%all_gdata[[loci[i]]][[d]]$trimmed_allele)==FALSE)]
+      
+      #obtains non-CWD genotype variants in the genotype dataset
+      for(b in 1:length(nonCWDtrunc[[loci[i]]])){
+        genotype_variants[[loci[i]]][[d]][[b]]<-subset(geno_exonlist[[loci[i]]][[d]], geno_exonlist[[loci[i]]][[d]]$trimmed_allele==nonCWDtrunc[[loci[i]]][[b]])
         
+        #if the non-CWD allele only has one variant, bind it to all_gdata
+        if(nrow(genotype_variants[[loci[i]]][[d]][[b]])==1){all_gdata[[loci[[i]]]][[d]]<-rbind(all_gdata[[loci[[i]]]][[d]],genotype_variants[[loci[[i]]]][[d]][[b]])}
         
-        #if an exon for a non-CWD allele has one amino acid column (i.e. exon 8 for HLA-A), store it into a separate
-        #variable, singleAA_alleles
-        if(length(columns[[loci[i]]][[d]])==1){
-          singleAA_exon[[loci[i]]][[b]]<-genotype_variants[[loci[i]]][[d]][[b]][ncol(genotype_variants[[loci[i]]][[d]][[b]])==7]
-          singleAA_alleles[[loci[i]]]<-singleAA_exon[[loci[i]]][lapply(singleAA_exon[[loci[i]]], length)>0]}}}
+        #if the non-CWD allele has more than one variant, extract number of amino acid columns
+        #present for a given exon 
+        if(nrow(genotype_variants[[loci[i]]][[d]][[b]])>1){
+          columns[[loci[i]]][[d]]<-7:length(genotype_variants[[loci[i]]][[d]][[b]])
+          
+          #if an exon for a non-CWD allele has more than one amino acid column, paste all the columns together to obtain
+          #the amino acid sequence which is stored in pastedAAseq
+          #pastedAAseq is evaluated to find which allele variant has the most complete sequence by counting the number of
+          #character, omitting * (notation for unknown amino acid)
+          #the allele with the most compelte sequence is bound to all_gdata
+          if(length(columns[[loci[i]]][[d]])>1){
+            pastedAAseq[[loci[i]]][[d]]<-apply(genotype_variants[[loci[i]]][[d]][[b]][ , columns[[loci[i]]][[d]]] , 1 , paste , collapse = "" )
+            all_gdata[[loci[i]]][[d]]<-rbind(all_gdata[[loci[i]]][[d]], genotype_variants[[loci[i]]][[d]][[b]][names(pastedAAseq[[loci[i]]][[d]][which.max(nchar(gsub("[*^]","",pastedAAseq[[loci[i]]][[d]])))]),])}
+          
+          
+          #if an exon for a non-CWD allele has one amino acid column (i.e. exon 8 for HLA-A), store it into a separate
+          #variable, singleAA_alleles
+          if(length(columns[[loci[i]]][[d]])==1){
+            singleAA_exon[[loci[i]]][[b]]<-genotype_variants[[loci[i]]][[d]][[b]][ncol(genotype_variants[[loci[i]]][[d]][[b]])==7]
+            singleAA_alleles[[loci[i]]]<-singleAA_exon[[loci[i]]][lapply(singleAA_exon[[loci[i]]], length)>0]}}}
+      
+      
+      #evaluates whether a variant amino acid is present and subsets it to nonCWD_checked if there is one
+      #otherwise, if nonCWDchecked only contains *, use *
+      for(c in 1:length(singleAA_alleles[[loci[i]]])){
+        if(any(singleAA_alleles[[loci[i]]][[c]][7:length(singleAA_alleles[[loci[i]]][[c]])]!="*")==TRUE) {nonCWD_checked[[loci[i]]][[c]]<-subset(singleAA_alleles[[loci[i]]][[c]], singleAA_alleles[[loci[i]]][[c]][7:length(singleAA_alleles[[loci[i]]][[c]])]!="*")[1,]}
+        if(any(singleAA_alleles[[loci[i]]][[c]][7:length(singleAA_alleles[[loci[i]]][[c]])]!="*")==FALSE){nonCWD_checked[[loci[i]]][[c]]<-subset(singleAA_alleles[[loci[i]]][[c]], singleAA_alleles[[loci[i]]][[c]][7:length(singleAA_alleles[[loci[i]]][[c]])]=="*")[1,]}
+      }
+      
+      #binds narrowed down non-CWD alleles for one amino acid exons and inputs it back IF there is a one columned amino acid
+      #if not, nothing happens 
+      if(length(columns[[loci[i]]][[d]])==1)
+      {all_gdata[[loci[i]]][[d]]<-rbind(all_gdata[[loci[i]]][[d]][ncol(all_gdata[[loci[i]]][[d]])==7], rbind(nonCWD_checked[[loci[i]]][[1]], nonCWD_checked[[loci[i]]][[2]]))}}
     
     
-    #evaluates whether a variant amino acid is present and subsets it to nonCWD_checked if there is one
-    #otherwise, if nonCWDchecked only contains *, use *
-    for(c in 1:length(singleAA_alleles[[loci[i]]])){
-      if(any(singleAA_alleles[[loci[i]]][[c]][7:length(singleAA_alleles[[loci[i]]][[c]])]!="*")==TRUE) {nonCWD_checked[[loci[i]]][[c]]<-subset(singleAA_alleles[[loci[i]]][[c]], singleAA_alleles[[loci[i]]][[c]][7:length(singleAA_alleles[[loci[i]]][[c]])]!="*")[1,]}
-      if(any(singleAA_alleles[[loci[i]]][[c]][7:length(singleAA_alleles[[loci[i]]][[c]])]!="*")==FALSE){nonCWD_checked[[loci[i]]][[c]]<-subset(singleAA_alleles[[loci[i]]][[c]], singleAA_alleles[[loci[i]]][[c]][7:length(singleAA_alleles[[loci[i]]][[c]])]=="*")[1,]}
-    }
+    #creates a new variable, position_parsed, with pre-defined elements based on
+    #column names in AA_segments (i.e. position in the peptide sequence)
+    position_parsed[[loci[i]]]<-sapply(colnames(AA_segments[[loci[i]]][,5:ncol(AA_segments[[loci[i]]])]), function(x) NULL)
     
-    #binds narrowed down non-CWD alleles for one amino acid exons and inputs it back IF there is a one columned amino acid
-    #if not, nothing happens 
-    if(length(columns[[loci[i]]][[d]])==1)
-    {all_gdata[[loci[i]]][[d]]<-rbind(all_gdata[[loci[i]]][[d]][ncol(all_gdata[[loci[i]]][[d]])==7], rbind(nonCWD_checked[[loci[i]]][[1]], nonCWD_checked[[loci[i]]][[2]]))}}
-  
-  
-  #creates a new variable, position_parsed, with pre-defined elements based on
-  #column names in AA_segments (i.e. position in the peptide sequence)
-  position_parsed[[loci[i]]]<-sapply(colnames(AA_segments[[loci[i]]][,5:ncol(AA_segments[[loci[i]]])]), function(x) NULL)
-  
-  
-  #for loop to extract only variant amino acids and input them into their respective element positions
-  #in position_parsed 
-  #extracts only variant amino acids, discounting NA and unknown alleles (*)
-  for(a in 1:length(all_gdata[[loci[i]]])){
-    for(b in 1:length(7:ncol(all_gdata[[loci[i]]][[a]]))){
-      position_parsed[[loci[i]]][match(colnames(all_gdata[[loci[i]]][[a]][7:ncol(all_gdata[[loci[i]]][[a]])]), names(position_parsed[[loci[i]]]))][[b]]<-unique(subset(all_gdata[[loci[i]]][[a]][c(5,b+6)], (all_gdata[[loci[i]]][[a]][b+6]!=all_gdata[[loci[i]]][[a]][,b+6][1]) & (all_gdata[[loci[i]]][[a]][b+6] != "*") & (all_gdata[[loci[i]]][[a]][b+6] != "NA")))}}
-  
-  
-  #removes invariant positions (i.e elements with no rows )
-  position_parsed[[loci[i]]]<-position_parsed[[loci[i]]][sapply(position_parsed[[loci[i]]], nrow)>0]
-  
-  #further subsets position_parsed to only variant positions with polymorphic amino acids 
-  for(g in 1:length(position_parsed[[loci[i]]])){
-    position_parsed[[loci[i]]][[g]]<-subset(position_parsed[[loci[i]]][[g]], length(unique(position_parsed[[loci[i]]][[g]][,2]))!=1)}
-  
-  #removes elements without polymorphic amino acids 
-  position_parsed[[loci[i]]]<-position_parsed[[loci[i]]][sapply(position_parsed[[loci[i]]], nrow)>0]
-  
-  #creates a dataframe that will go into BIGDAWG, 
-  #where each variant position has 2 columns to match each locus specific
-  #column in genotype data
-  #columns 1 and 2 of this dataframe are adapted from genotype data columns
-  #patientID and disease status 
-  mastertable[[loci[[i]]]]<- data.frame(gdata[,c(1,2)], matrix("", ncol = length(position_parsed[[loci[[i]]]])*2), stringsAsFactors = F)
-  mastertablecols[[loci[[i]]]]<-paste(loci[[i]], names(position_parsed[[loci[[i]]]]), sep="_")
-  
-  #repeats variant amino acid positions twice and stores them for future naming of
-  #master table column 
-  for(t in 1:length(mastertablecols[[loci[[i]]]])){
-    rep_variantAA[[loci[[i]]]][[t]]<-rep(mastertablecols[[loci[[i]]]][[t]],2)}
-  
-  #renames column names 
-  colnames(mastertable[[loci[[i]]]])<-c("SampleID", "Disease", unlist(rep_variantAA[[loci[[i]]]]))
-  
-  
-  #extracts which alleles in the genotype data are not in the amino acid specific variants 
-  missing_geno[[loci[[i]]]]<-sapply(position_parsed[[loci[[i]]]], function(x) NULL)
-  
-  for(f in 1:length(position_parsed[[loci[[i]]]])){
-    missing_geno[[loci[[i]]]][[f]]<-geno_alleles[[loci[[i]]]][!geno_alleles[[loci[[i]]]] %in% position_parsed[[loci[[i]]]][[f]]$trimmed_allele]}
-  
-  
-  #creates a new dataframe for each of the missing alleles with NA input
-  for(h in 1:length(missing_geno[[loci[[i]]]])){
-    missing_geno_output[[loci[[i]]]][[h]]<-data.frame("V1"=missing_geno[[loci[[i]]]][[h]],
-                                                      "V2"=NA, stringsAsFactors = F)
     
-    #renames dataframes so the missing allele data can be bound respectively for each
-    #amino acid variant
-    colnames(missing_geno_output[[loci[[i]]]][[h]])<-c("trimmed_allele", names(position_parsed[[loci[[i]]]][[h]][2]))
+    #for loop to extract only variant amino acids and input them into their respective element positions
+    #in position_parsed 
+    #extracts only variant amino acids, discounting NA and unknown alleles (*)
+    for(a in 1:length(all_gdata[[loci[i]]])){
+      for(b in 1:length(7:ncol(all_gdata[[loci[i]]][[a]]))){
+        position_parsed[[loci[i]]][match(colnames(all_gdata[[loci[i]]][[a]][7:ncol(all_gdata[[loci[i]]][[a]])]), names(position_parsed[[loci[i]]]))][[b]]<-unique(subset(all_gdata[[loci[i]]][[a]][c(5,b+6)], (all_gdata[[loci[i]]][[a]][b+6]!=all_gdata[[loci[i]]][[a]][,b+6][1]) & (all_gdata[[loci[i]]][[a]][b+6] != "*") & (all_gdata[[loci[i]]][[a]][b+6] != "NA")))}}
     
-    position_parsed[[loci[[i]]]][[h]]<-rbind(position_parsed[[loci[[i]]]][[h]],missing_geno_output[[loci[[i]]]][[h]])
+    #removes invariant positions (i.e elements with no rows )
+    #inDels will be filtered out via a is.null application
+    position_parsed[[loci[i]]]<-position_parsed[[loci[i]]][sapply(position_parsed[[loci[[i]]]][which(lapply(position_parsed[[loci[[i]]]], is.null)==FALSE)], nrow)>0]
     
-    #matches each locus specific column in gdata to each variant amino acid position -- inputs
-    #into appropriate column in master table 
+    #further subsets position_parsed to only variant positions with polymorphic amino acids 
+    for(g in 1:length(position_parsed[[loci[i]]])){
+      position_parsed[[loci[i]]][[g]]<-subset(position_parsed[[loci[i]]][[g]], length(unique(position_parsed[[loci[i]]][[g]][,2]))!=1)}
+    
+    #removes elements without polymorphic amino acids 
+    position_parsed[[loci[i]]]<-position_parsed[[loci[i]]][sapply(position_parsed[[loci[i]]], nrow)>0]
+    
+    
+    variantAApositions[[loci[[i]]]]<-sapply(position_parsed[[loci[[i]]]], function(x) NULL)
+    
+    for(j in 1:length(all_gdata[[loci[[i]]]])){
+      for(k in 1:length(names(variantAApositions[[loci[[i]]]]))){
+        if(any(colnames(all_gdata[[loci[[i]]]][[j]])==names(variantAApositions[[loci[[i]]]])[[k]])){variantAApositions[[loci[[i]]]][names(variantAApositions[[loci[[i]]]])==names(variantAApositions[[loci[[i]]]])][[k]]<-cbind.data.frame(trimmed_allele=all_gdata[[loci[[i]]]][[1]][,5], all_gdata[[loci[[i]]]][[j]][colnames(all_gdata[[loci[[i]]]][[j]])==names(variantAApositions[[loci[[i]]]])[[k]]], stringsAsFactors=FALSE)}}}
+    
+    
+    #creates a dataframe that will go into BIGDAWG,     #where each variant position has 2 columns to match each locus specific
+    #column in genotype data
+    #columns 1 and 2 of this dataframe are adapted from genotype data columns
+    #patientID and disease status 
+    mastertable[[loci[[i]]]]<- data.frame(gdata[,c(1,2)], matrix("", ncol =   length(variantAApositions[[loci[[i]]]])*2), stringsAsFactors = F)
+    mastertablecols[[loci[[i]]]]<-names(position_parsed[[loci[[i]]]])
+    
+    #repeats variant amino acid positions twice and stores them for future naming of
+    #master table column 
+    for(t in 1:length(mastertablecols[[loci[[i]]]])){
+      rep_variantAA[[loci[[i]]]][[t]]<-rep(mastertablecols[[loci[[i]]]][[t]],2)}
+    
+    #renames column names 
+    colnames(mastertable[[loci[[i]]]])<-c("SampleID", "Disease", unlist(rep_variantAA[[loci[[i]]]]))
+    
+    
+    
     for(u in 1:length(gdata[loci[[i]]==colnames(gdata)])){
-      mastertable[[loci[[i]]]][names(mastertable[[loci[[i]]]])==paste(loci[[i]], names(position_parsed[[loci[[i]]]][[h]][2]), sep="_")][u]<-position_parsed[[loci[[i]]]][[h]][,2][match(gdata[loci[[i]]==colnames(gdata)][[u]], position_parsed[[loci[[i]]]][[h]][,1])]}
-  }}
-return(mastertable)
+      for(s in 1:length(variantAApositions[[loci[[i]]]])){
+        mastertable[[loci[[i]]]][names(variantAApositions[[loci[[i]]]][[s]][2]) == names(mastertable[[loci[[i]]]])][[u]]<-variantAApositions[[loci[[i]]]][[s]][,2][match(gdata[loci[[i]]==colnames(gdata)][[u]], variantAApositions[[loci[[i]]]][[s]][,1])]
+      }}}
+  return(mastertable)
+
 }
+  
+##END variantAA_extractor function script 
 
-variantAAtable<-variantAAextractor(loci = "A", genotypefiles = "MS_EUR.txt")
-BIGDAWG(variantAAtable[[1]], HLA=F, Run.Tests="L", Missing = "ignore")
+###example use of variantAAextractor -- saves to variable called variantAAtable
+variantAAtable<-variantAAextractor(loci=c("A", "B", "C", "DPB1", "DQB1", "DRB1"), genotypefiles = "MS_EUR.txt")
 
+for(i in 1:length(variantAAtable)){
+BIGDAWG(variantAAtable[[i]], HLA=F, Run.Tests="L", Missing = "ignore")}
