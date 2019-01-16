@@ -1,7 +1,7 @@
 #variantAA_extractor function
-#V 0.2
+#V 0.3
 #By: L Tran
-#01/04/19
+#01/15/19
 
 
 ##Source Files
@@ -103,6 +103,9 @@ variantAAextractor<-function(loci,genotypefiles){
     gdata[gdata==""]<-NA
     gdata[[i]]<-ifelse(is.na(gdata[[i]])==FALSE, paste(colnames(gdata[i]),gdata[,i],sep="*"), NA)}
   
+  #removes rows with only ALL NA data 
+  gdata<-gdata[!(rowSums(is.na(gdata))==NCOL(gdata)-2),]
+  
   
   #creates empty variables for future for loops
   start<-end<-alignment<-list()
@@ -178,9 +181,7 @@ variantAAextractor<-function(loci,genotypefiles){
     if(loci[[i]]=="DPB1"){
       w$DPB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
     
-    
-    ##stopped here -- figured out DRB discrepancy between corr table and alignment position 
-    #splits string formed by cat for separate character variables
+        #splits string formed by cat for separate character variables
     alignment_positions[[loci[i]]]<-as.character(unlist(strsplit(w[[loci[i]]], " ")))
     
     
@@ -271,7 +272,7 @@ variantAAextractor<-function(loci,genotypefiles){
     
     #sets appropriate column names, where each amino acid has its respective position based on the
     #alignment sequence 
-    colnames(AA_segments[[loci[i]]]) <- c("locus","allele","trimmed_allele","allele_name", corr_table[[loci[i]]][2,])
+    colnames(AA_segments[[loci[i]]]) <- c("locus","allele","trimmed_allele","allele_name", corr_table[[loci[i]]][1,])
     
     #distributes  reference sequence from row 1
     #into all other rows, if they contain a "-"
@@ -295,17 +296,17 @@ variantAAextractor<-function(loci,genotypefiles){
     #only subtracted by 1, since we do not need to
     #account for there being no position zero in the alignment)
     if(loci[[i]]=="A"){
-      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-2), colnames(AA_segments[[loci[i]]]))])}
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
     if(loci[[i]]=="B"){
-      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-2), colnames(AA_segments[[loci[i]]]))])}
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
     if(loci[[i]]=="C"){
-      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-2), colnames(AA_segments[[loci[i]]]))])}
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
     if(loci[[i]]=="DRB1"){
-      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]), colnames(AA_segments[[loci[i]]]))])}
     if(loci[[i]] == "DQB1"){
-      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]), colnames(AA_segments[[loci[i]]]))])}
     if(loci[[i]] == "DPB1"){
-      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]-1), colnames(AA_segments[[loci[i]]]))])}
+      exonlist[[i]][[1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,5:match(as.numeric(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]][[1]]), colnames(AA_segments[[loci[i]]]))])}
     
     #subsets last exon for loci 
     exonlist[[loci[i]]][[nrow(AA_atlas[[match(loci[[i]],names(AA_atlas))]])+1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][match(AA_atlas[[match(loci[[i]],names(AA_atlas))]][[2]][[length(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]])]]:names(AA_segments[[loci[i]]][ncol(AA_segments[[loci[i]]])]), colnames(AA_segments[[loci[i]]]))])
@@ -463,5 +464,11 @@ variantAAextractor<-function(loci,genotypefiles){
 ###example use of variantAAextractor -- saves to variable called variantAAtable
 variantAAtable<-variantAAextractor(loci=c("A", "B", "C", "DPB1", "DQB1", "DRB1"), genotypefiles = "MS_EUR.txt")
 
+#defines loci for BIGDAWG analysis iteraton0 results 
+loci=c("A", "B", "C", "DPB1", "DQB1", "DRB1")
+
+iteration0<-sapply(loci, function(x) NULL)
+
+#runs BIGDAWG on all loci 
 for(i in 1:length(variantAAtable)){
-BIGDAWG(variantAAtable[[i]], HLA=F, Run.Tests="L", Missing = "ignore")}
+iteration0[[loci[[i]]]]<-BIGDAWG(variantAAtable[[i]], HLA=F, Run.Tests="L", Missing = "ignore", Return=T, Output = F)}
