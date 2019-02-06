@@ -4,7 +4,7 @@
 
 #######ITERATION 0 
 
-motif_list<-c(0,2,4,6)
+motif_list<-NULL
 
 load("variantAAtable.rda")
 
@@ -49,14 +49,7 @@ combiAnalyzer<-function(loci, myData, KDLO, BOLO, UMLO, counter, motif_list){
       BOLO[i,8]<-gsub("-", "", as.numeric(BOLO[i,]$OR)- as.numeric(subset(subset(KDLO, KDLO[,1] %in% paste(strsplit(BOLO[i,][[1]], ":")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse=":")), subset(KDLO, KDLO[,1] %in% paste(strsplit(BOLO[i,][[1]], ":")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse=":"))$Allele %in%paste(strsplit(BOLO[i,][[2]], "~")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse="~"))$OR))
       BOLO[i,9]<-gsub("-", "", as.numeric(BOLO[i,]$OR)-as.numeric(subset(subset(KDLO_list[[1]], KDLO_list[[1]]$Locus %in% strsplit(BOLO[i,][[1]], ":")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]]), subset(KDLO_list[[1]], KDLO_list[[1]]$Locus %in% strsplit(BOLO[i,][[1]], ":")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]])$Allele %in% strsplit(BOLO[i,][[2]], "~")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]])$OR))
     }}
-  
-  if((counter==2) & (motif_list[[3]]==4)){
-    for(i in 1:nrow(BOLO)){
-      BOLO[i,8]<-gsub("-", "", as.numeric(BOLO[i,]$OR)- as.numeric(subset(subset(KDLO, KDLO[,1] %in% paste(strsplit(BOLO[i,][[1]], ":")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse=":")), subset(KDLO, KDLO[,1] %in% paste(strsplit(BOLO[i,][[1]], ":")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse=":"))$Allele %in%paste(strsplit(BOLO[i,][[2]], "~")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse="~"))$OR))
-      BOLO[i,9]<-gsub("-", "", as.numeric(BOLO[i,]$OR)-as.numeric(subset(subset(KDLO_list[[1]], KDLO_list[[1]]$Locus %in% strsplit(BOLO[i,][[1]], ":")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]]), subset(KDLO_list[[1]], KDLO_list[[1]]$Locus %in% strsplit(BOLO[i,][[1]], ":")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]])$Allele %in% strsplit(BOLO[i,][[2]], "~")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]])$OR))
-    }
-}
-  
+
   
   #subsets only * values for KDLO from BOLO
   KDLO<-subset(BOLO,BOLO[,7]=="*")
@@ -96,7 +89,7 @@ combiAnalyzer<-function(loci, myData, KDLO, BOLO, UMLO, counter, motif_list){
     start1<-unique(unlist(strsplit(KDLO$Locus, ":")))
     combinames<-NULL}
   
-  if((counter>0) & (motif_list[[3]]==3)){
+  if(counter>0){
     possible_combis<-sapply(unique(KDLO$Locus), function(x) NULL)
     
     #finds possible combinations by pasting names of list with singular amino acids not in that pair 
@@ -109,18 +102,7 @@ combiAnalyzer<-function(loci, myData, KDLO, BOLO, UMLO, counter, motif_list){
     
     combinames<-unique(mixedsort(combinames))}
   
-  if((counter==1) & (motif_list[[3]]==4)){
-      possible_combis<-sapply(unique(KDLO$Locus), function(x) NULL)
-      for(i in 1:length(interim$combinames)){
-        ##subsets out any pairs with 33: or 86: or :33 or :86
-        possible_combis[[i]]<-paste(interim$combinames[[i]],subset(interim$combinames, !grepl(paste(strsplit(interim$combinames[[i]], ":")[[1]], ":", sep="")[[1]], interim$combinames) & !grepl(paste(strsplit(interim$combinames[[i]], ":")[[1]], ":", sep="")[[2]], interim$combinames)& !grepl(paste(":",strsplit(interim$combinames[[i]], ":")[[1]], sep="")[[1]], interim$combinames) & !grepl(paste(":",strsplit(interim$combinames[[i]], ":")[[1]], sep="")[[2]], interim$combinames)), sep=":")
-      }
-      combinames<-NULL
-      for(i in 1:length(unlist(possible_combis))){
-        combinames[[i]]<-paste(mixedsort(strsplit(unlist(possible_combis), ":")[[i]]), collapse = ":")
-        combinames<-unique(unlist(combinames))[!is.na(unique(unlist(combinames)))]}
-      }
-  
+
   if(counter==1){
     for(i in 1:length(unassociated_posi)){
       combinames<-subset(combinames, (!grepl(paste("^", unassociated_posi[[i]], sep=""), combinames)) & (!grepl(paste(":", unassociated_posi[[i]], sep=""), combinames)))}
