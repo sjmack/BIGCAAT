@@ -2,7 +2,6 @@
 #by:Livia Tran 
 #v 1.2
 
-#######ITERATION 0 
 
 motif_list<-NULL
 
@@ -10,70 +9,88 @@ load("variantAAtable.rda")
 
 combiAnalyzer<-function(loci, myData, KDLO, BOLO, UMLO, counter, motif_list){
   
+  #specifies a default motif list if one is not provided 
   if((is.null(motif_list)==TRUE)&(counter==0)){
     motif_list<-c(0,2,3,4,5,6,7)
     print(paste("Motif list has not been provided - default list will be used."))
   }
   
+  #BIGDAWG analysis 
+  #set output as T for statistical outputs 
   BOLO<-BIGDAWG(myData, HLA=F, Run.Tests="L", Missing = "ignore", Return=T, Output = F)
   
   #unlists all lists in the dataframe
   BOLO<-data.frame(lapply(as.data.frame(BOLO$L$Set1$OR), function(x) unlist(x)), stringsAsFactors = F)
   
+  #creates dummy_KDLO for comparison to first BOLO -- only on the 0th iteration 
   if(counter==0){
     #makes dummy KDLO based on previous BOLO 
     dummy_KDLO<-as.data.frame(t(c("TBA-loc","TBA-allele",1.0,0.5,1.5,0.5,"NS")), stringsAsFactors = F)[rep(seq_len(nrow(as.data.frame(t(c("TBA-loc","TBA-allele",1.0,0.5,1.5,0.5,"NS")), stringsAsFactors = F))), each=nrow(BOLO)),]
     dummy_KDLO[,1]<-BOLO$Locus
     dummy_KDLO[,2]<-BOLO$Allele
     
-    
     ##MAORI module 
+    #finds difference between dummy and BOLO amino acid variants and inputs into new column
+    ##dummy comparison only for 0th iteration
     for(i in 1:nrow(BOLO)){
       #finds OR difference between BOLO and dummy ORs -- subs out "-", for a blank, since only evaluating absolute value of OR diff
       #adds difference to new column in BOLO 
       BOLO[i,8]<-gsub("-", "", as.numeric(BOLO[i,]$OR)-as.numeric(subset(subset(dummy_KDLO, grepl(BOLO[i,][[1]], dummy_KDLO[,1])), grepl(BOLO[i,][[2]], subset(dummy_KDLO, grepl(BOLO[i,][[1]], dummy_KDLO[,1]))[,2]))[,3]))[[1]]
     }}
   
+  #subsets out binned alleles and any alleles with NA combinations
   if(counter>0){
     BOLO<-subset(BOLO, (BOLO$Allele!="binned") & (!grepl("NA", BOLO$Allele)))}
   
-  
+  #MAORI statement for iteration 1
   if(counter==1){
     for(i in 1:nrow(BOLO)){
       BOLO[i,8]<-gsub("-", "", as.numeric(BOLO[i,]$OR)-as.numeric(subset(subset(KDLO, KDLO[,1] %in% strsplit(BOLO[i,][[1]], ":")[[1]][[1]]), subset(KDLO, KDLO[,1] %in% strsplit(BOLO[i,][[1]], ":")[[1]][[1]])$Allele %in% strsplit(BOLO[i,][[2]], "~")[[1]][[1]])$OR))}
   }
-
   
+  if((counter>0) & (nrow(BOLO)==0)){ 
+    return(BOLO)}
+  
+  #MAORI statement for iteration 2+
+  #further addition for adding a 9th column for comparison to newly made nth variants to its singular amino acid variant
   if(counter>1){
     for(i in 1:nrow(BOLO)){
       BOLO[i,8]<-gsub("-", "", as.numeric(BOLO[i,]$OR)- as.numeric(subset(subset(KDLO, KDLO[,1] %in% paste(strsplit(BOLO[i,][[1]], ":")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse=":")), subset(KDLO, KDLO[,1] %in% paste(strsplit(BOLO[i,][[1]], ":")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse=":"))$Allele %in%paste(strsplit(BOLO[i,][[2]], "~")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse="~"))$OR))
       BOLO[i,9]<-gsub("-", "", as.numeric(BOLO[i,]$OR)-as.numeric(subset(subset(KDLO_list[[1]], KDLO_list[[1]]$Locus %in% strsplit(BOLO[i,][[1]], ":")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]]), subset(KDLO_list[[1]], KDLO_list[[1]]$Locus %in% strsplit(BOLO[i,][[1]], ":")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]])$Allele %in% strsplit(BOLO[i,][[2]], "~")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]])$OR))
     }}
 
-  
-  #subsets only * values for KDLO from BOLO
+  #subsets out NS values 
   KDLO<-subset(BOLO,BOLO[,7]=="*")
 
+  #statement for returning BOLO if KDLO=0
   if((counter>0) & (nrow(KDLO)==0)){ 
     return(BOLO)}
 
+  #subsets out variants that have not shown >0.1 improvement from their previous variants and
+  #singular amino acids 
     if(counter>1){
     #subsets out OR differences smaller than 0.1 
     KDLO<-subset(KDLO, KDLO[,9]>0.1)}
   
   KDLO<-subset(KDLO, KDLO[,8]>0.1)
   
+  #statement for returning KDLO if KDLO=0
   if(nrow(KDLO)==0){
     return(KDLO)}
   
   #adds in positions from original BOLO that were previously eliminated because of NS or <0.1 variant  
   KDLO<-unique(rbind(KDLO, subset(BOLO, BOLO$Locus%in%KDLO$Locus)))[mixedorder(row.names(unique(rbind(KDLO, subset(BOLO, BOLO$Locus%in%KDLO$Locus))))),]
   
+  #finds unassociated positions from current iteration 
   unassociated_posi<-unique(BOLO$Locus[!BOLO$Locus %in% KDLO$Locus])
   
+  #if length(unassociated_posi==0), return KDLO -- this means KDLO and BOLO are the same
+  #and max improvement has been reached 
   if(length(unassociated_posi)==0){
-    return(KDLO)}
-  
+    return(KDLO)
+  }
+
+  #pair name generation 
   if(counter==0){
     start1<-unique(KDLO$Locus)
     combinames<-sapply(start1, function(x) NULL)
@@ -85,6 +102,7 @@ combiAnalyzer<-function(loci, myData, KDLO, BOLO, UMLO, counter, motif_list){
     combinames<-unlist(combinames, use.names = F)[!is.na(unlist(combinames, use.names = F))]
   }
   
+  #set start as singular amino acids 
   if(counter>0){
     start1<-unique(unlist(strsplit(KDLO$Locus, ":")))
     combinames<-NULL}
@@ -102,7 +120,7 @@ combiAnalyzer<-function(loci, myData, KDLO, BOLO, UMLO, counter, motif_list){
     
     combinames<-unique(mixedsort(combinames))}
   
-
+###subsets combinames by successive unassociated positions
   if(counter==1){
     for(i in 1:length(unassociated_posi)){
       combinames<-subset(combinames, (!grepl(paste("^", unassociated_posi[[i]], sep=""), combinames)) & (!grepl(paste(":", unassociated_posi[[i]], sep=""), combinames)))}
@@ -198,6 +216,7 @@ combiAnalyzer<-function(loci, myData, KDLO, BOLO, UMLO, counter, motif_list){
     for(i in 1:length(UMLO_list[[counter-5]])){
       combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-5]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-5]][[i]], sep=""), combinames)))}
   }
+
   
   
   #if there are no more combination names after subsetting them based on UMLO_list
@@ -237,7 +256,7 @@ combiAnalyzer<-function(loci, myData, KDLO, BOLO, UMLO, counter, motif_list){
   return(myData)
 }
 
-loci="B"
+loci="C"
 BOLO_list<-list()
 KDLO_list<-list()
 UMLO_list<-list()
@@ -275,5 +294,4 @@ while(stop==FALSE){
     print("End of motif_list analysis - maximal OR has been reached.")}
   
 }
-
 
