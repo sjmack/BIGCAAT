@@ -1,0 +1,297 @@
+#combiAnalyzer function script
+#by:Livia Tran 
+#v 1.2
+
+#######ITERATION 0 
+
+motif_list<-c(0,2,4,6)
+
+load("variantAAtable.rda")
+
+combiAnalyzer<-function(loci, myData, KDLO, BOLO, UMLO, counter, motif_list){
+  
+  if((is.null(motif_list)==TRUE)&(counter==0)){
+    motif_list<-c(0,2,3,4,5,6,7)
+    print(paste("Motif list has not been provided - default list will be used."))
+  }
+  
+  BOLO<-BIGDAWG(myData, HLA=F, Run.Tests="L", Missing = "ignore", Return=T, Output = F)
+  
+  #unlists all lists in the dataframe
+  BOLO<-data.frame(lapply(as.data.frame(BOLO$L$Set1$OR), function(x) unlist(x)), stringsAsFactors = F)
+  
+  if(counter==0){
+    #makes dummy KDLO based on previous BOLO 
+    dummy_KDLO<-as.data.frame(t(c("TBA-loc","TBA-allele",1.0,0.5,1.5,0.5,"NS")), stringsAsFactors = F)[rep(seq_len(nrow(as.data.frame(t(c("TBA-loc","TBA-allele",1.0,0.5,1.5,0.5,"NS")), stringsAsFactors = F))), each=nrow(BOLO)),]
+    dummy_KDLO[,1]<-BOLO$Locus
+    dummy_KDLO[,2]<-BOLO$Allele
+    
+    
+    ##MAORI module 
+    for(i in 1:nrow(BOLO)){
+      #finds OR difference between BOLO and dummy ORs -- subs out "-", for a blank, since only evaluating absolute value of OR diff
+      #adds difference to new column in BOLO 
+      BOLO[i,8]<-gsub("-", "", as.numeric(BOLO[i,]$OR)-as.numeric(subset(subset(dummy_KDLO, grepl(BOLO[i,][[1]], dummy_KDLO[,1])), grepl(BOLO[i,][[2]], subset(dummy_KDLO, grepl(BOLO[i,][[1]], dummy_KDLO[,1]))[,2]))[,3]))[[1]]
+    }}
+  
+  if(counter>0){
+    BOLO<-subset(BOLO, (BOLO$Allele!="binned") & (!grepl("NA", BOLO$Allele)))}
+  
+  
+  if(counter==1){
+    for(i in 1:nrow(BOLO)){
+      BOLO[i,8]<-gsub("-", "", as.numeric(BOLO[i,]$OR)-as.numeric(subset(subset(KDLO, KDLO[,1] %in% strsplit(BOLO[i,][[1]], ":")[[1]][[1]]), subset(KDLO, KDLO[,1] %in% strsplit(BOLO[i,][[1]], ":")[[1]][[1]])$Allele %in% strsplit(BOLO[i,][[2]], "~")[[1]][[1]])$OR))}
+  }
+
+  
+  if(counter>1){
+    for(i in 1:nrow(BOLO)){
+      BOLO[i,8]<-gsub("-", "", as.numeric(BOLO[i,]$OR)- as.numeric(subset(subset(KDLO, KDLO[,1] %in% paste(strsplit(BOLO[i,][[1]], ":")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse=":")), subset(KDLO, KDLO[,1] %in% paste(strsplit(BOLO[i,][[1]], ":")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse=":"))$Allele %in%paste(strsplit(BOLO[i,][[2]], "~")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse="~"))$OR))
+      BOLO[i,9]<-gsub("-", "", as.numeric(BOLO[i,]$OR)-as.numeric(subset(subset(KDLO_list[[1]], KDLO_list[[1]]$Locus %in% strsplit(BOLO[i,][[1]], ":")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]]), subset(KDLO_list[[1]], KDLO_list[[1]]$Locus %in% strsplit(BOLO[i,][[1]], ":")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]])$Allele %in% strsplit(BOLO[i,][[2]], "~")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]])$OR))
+    }}
+  
+  if((counter==2) & (motif_list[[3]]==4)){
+    for(i in 1:nrow(BOLO)){
+      BOLO[i,8]<-gsub("-", "", as.numeric(BOLO[i,]$OR)- as.numeric(subset(subset(KDLO, KDLO[,1] %in% paste(strsplit(BOLO[i,][[1]], ":")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse=":")), subset(KDLO, KDLO[,1] %in% paste(strsplit(BOLO[i,][[1]], ":")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse=":"))$Allele %in%paste(strsplit(BOLO[i,][[2]], "~")[[1]][c(1:length(strsplit(KDLO$Locus, ":")[[1]]))], collapse="~"))$OR))
+      BOLO[i,9]<-gsub("-", "", as.numeric(BOLO[i,]$OR)-as.numeric(subset(subset(KDLO_list[[1]], KDLO_list[[1]]$Locus %in% strsplit(BOLO[i,][[1]], ":")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]]), subset(KDLO_list[[1]], KDLO_list[[1]]$Locus %in% strsplit(BOLO[i,][[1]], ":")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]])$Allele %in% strsplit(BOLO[i,][[2]], "~")[[1]][[length(unlist(strsplit(BOLO[i,][[1]], ":")))]])$OR))
+    }
+}
+  
+  
+  #subsets only * values for KDLO from BOLO
+  KDLO<-subset(BOLO,BOLO[,7]=="*")
+
+  if((counter>0) & (nrow(KDLO)==0)){ 
+    return(BOLO)}
+
+    if(counter>1){
+    #subsets out OR differences smaller than 0.1 
+    KDLO<-subset(KDLO, KDLO[,9]>0.1)}
+  
+  KDLO<-subset(KDLO, KDLO[,8]>0.1)
+  
+  if(nrow(KDLO)==0){
+    return(KDLO)}
+  
+  #adds in positions from original BOLO that were previously eliminated because of NS or <0.1 variant  
+  KDLO<-unique(rbind(KDLO, subset(BOLO, BOLO$Locus%in%KDLO$Locus)))[mixedorder(row.names(unique(rbind(KDLO, subset(BOLO, BOLO$Locus%in%KDLO$Locus))))),]
+  
+  unassociated_posi<-unique(BOLO$Locus[!BOLO$Locus %in% KDLO$Locus])
+  
+  if(length(unassociated_posi)==0){
+    return(KDLO)}
+  
+  if(counter==0){
+    start1<-unique(KDLO$Locus)
+    combinames<-sapply(start1, function(x) NULL)
+    for(i in 1:(length(start1)-1)){ ## range.x = 1:(N-1)
+      for(j in (i+1):length(combinames)){ ## range.y = x+1:N
+        if(names(combinames)[[j]]!=start1[[i]]){
+          combinames[[i]][[j]]<-paste(start1[[i]],names(combinames)[[j]],sep=":")}}}
+    #unlists iter0names and omits NAs to obtain all unique possible pair combinations 
+    combinames<-unlist(combinames, use.names = F)[!is.na(unlist(combinames, use.names = F))]
+  }
+  
+  if(counter>0){
+    start1<-unique(unlist(strsplit(KDLO$Locus, ":")))
+    combinames<-NULL}
+  
+  if((counter>0) & (motif_list[[3]]==3)){
+    possible_combis<-sapply(unique(KDLO$Locus), function(x) NULL)
+    
+    #finds possible combinations by pasting names of list with singular amino acids not in that pair 
+    for(i in 1:length(possible_combis)){
+      possible_combis[[i]]<-paste(names(possible_combis[i]), unique(start1[which(start1%in%strsplit(names(possible_combis[i]), ":")[[1]]==FALSE)]), sep=":")}
+    
+    #splits those triplets up and sorts them numerically to later on eliminate any duplicates 
+    for(j in 1:length(unlist(possible_combis))){
+      combinames[[j]]<-paste(mixedsort(strsplit(unlist(possible_combis, use.names=F), ":")[[j]], decreasing=F), collapse=":")}
+    
+    combinames<-unique(mixedsort(combinames))}
+  
+  if((counter==1) & (motif_list[[3]]==4)){
+      possible_combis<-sapply(unique(KDLO$Locus), function(x) NULL)
+      for(i in 1:length(interim$combinames)){
+        ##subsets out any pairs with 33: or 86: or :33 or :86
+        possible_combis[[i]]<-paste(interim$combinames[[i]],subset(interim$combinames, !grepl(paste(strsplit(interim$combinames[[i]], ":")[[1]], ":", sep="")[[1]], interim$combinames) & !grepl(paste(strsplit(interim$combinames[[i]], ":")[[1]], ":", sep="")[[2]], interim$combinames)& !grepl(paste(":",strsplit(interim$combinames[[i]], ":")[[1]], sep="")[[1]], interim$combinames) & !grepl(paste(":",strsplit(interim$combinames[[i]], ":")[[1]], sep="")[[2]], interim$combinames)), sep=":")
+      }
+      combinames<-NULL
+      for(i in 1:length(unlist(possible_combis))){
+        combinames[[i]]<-paste(mixedsort(strsplit(unlist(possible_combis), ":")[[i]]), collapse = ":")
+        combinames<-unique(unlist(combinames))[!is.na(unique(unlist(combinames)))]}
+      }
+  
+  if(counter==1){
+    for(i in 1:length(unassociated_posi)){
+      combinames<-subset(combinames, (!grepl(paste("^", unassociated_posi[[i]], sep=""), combinames)) & (!grepl(paste(":", unassociated_posi[[i]], sep=""), combinames)))}
+  }
+  
+  if(counter==2){
+    for(i in 1:length(unassociated_posi)){
+      combinames<-subset(combinames, (!grepl(paste("^", unassociated_posi[[i]], sep=""), combinames)) & (!grepl(paste(":", unassociated_posi[[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter]])){
+     combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter]][[i]], sep=""), combinames)))}
+  }
+  
+  if(length(combinames)==0){
+    return(KDLO)
+  }
+
+  if(counter==3){
+    for(i in 1:length(unassociated_posi)){
+      combinames<-subset(combinames, (!grepl(paste("^", unassociated_posi[[i]], sep=""), combinames)) & (!grepl(paste(":", unassociated_posi[[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-1]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-1]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-1]][[i]], sep=""), combinames)))}
+  }
+  if(length(combinames)==0){
+    return(KDLO)
+  }
+  
+  if(counter==4){
+    for(i in 1:length(unassociated_posi)){
+      combinames<-subset(combinames, (!grepl(paste("^", unassociated_posi[[i]], sep=""), combinames)) & (!grepl(paste(":", unassociated_posi[[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-1]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-1]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-1]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-2]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-2]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-2]][[i]], sep=""), combinames)))}
+  }
+  
+  if(length(combinames)==0){
+    return(KDLO)
+  }
+  
+  if(counter==5){
+    for(i in 1:length(unassociated_posi)){
+      combinames<-subset(combinames, (!grepl(paste("^", unassociated_posi[[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-3]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-1]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-1]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-1]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-2]])){
+      combinames<-subset(combinames, !grepl(paste("^", UMLO_list[[counter-2]][[i]], sep=""), combinames) & (!grepl(paste(":", UMLO_list[[counter-2]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-3]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-3]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-3]][[i]], sep=""), combinames)))}
+  }
+  
+  if(length(combinames)==0){
+    return(KDLO)
+  }
+  
+  if(counter==6){
+    for(i in 1:length(unassociated_posi)){
+      combinames<-subset(combinames, (!grepl(paste("^", unassociated_posi[[i]], sep=""), combinames)) & (!grepl(paste(":", unassociated_posi[[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-1]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-1]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-1]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-2]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-2]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-2]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-3]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-3]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-3]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-4]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-4]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-4]][[i]], sep=""), combinames)))}
+  }
+  
+  if(length(combinames)==0){
+    return(KDLO)
+  }
+  
+  if(counter==7){
+    for(i in 1:length(unassociated_posi)){
+      combinames<-subset(combinames, (!grepl(paste("^", unassociated_posi[[i]], sep=""), combinames)) & (!grepl(paste(":", unassociated_posi[[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-1]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-1]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-1]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-2]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-2]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-2]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-3]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-3]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-3]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-4]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-4]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-4]][[i]], sep=""), combinames)))}
+    for(i in 1:length(UMLO_list[[counter-5]])){
+      combinames<-subset(combinames, (!grepl(paste("^", UMLO_list[[counter-5]][[i]], sep=""), combinames)) & (!grepl(paste(":", UMLO_list[[counter-5]][[i]], sep=""), combinames)))}
+  }
+  
+  
+  #if there are no more combination names after subsetting them based on UMLO_list
+  #return function and end
+  if(length(combinames)==0){
+    return(KDLO)
+  }
+  
+  #df for pairs -- length is number of unique pairs * 2, 
+  combidf<-data.frame(variantAAtable[[loci]][,c(1,2)], matrix("", ncol =length(rep(combinames, 2))), stringsAsFactors = F)
+  
+  #fills in column names 
+  colnames(combidf)<-c("SampleID", "Disease", mixedsort(rep(unlist(combinames), 2)))
+  
+  #observes number of columns for those needed to be pasted together
+  cols=c(1:length(strsplit(combinames[[1]], ":")[[1]]))
+  
+  #[[1]] to contain amino acid combos of TRUE/FALSE
+  #[[2]] to contain amino acid combos of FALSE/TRUE
+  dfAA<-sapply(1:2, function(x) NULL)
+  
+  #fills in element names in the lists formed in the above lists 
+  for(j in 1:length(dfAA)){
+    dfAA[[j]]<-sapply(combinames, function(x) NULL)}
+  
+  #fills in appropriate position pair combos into dfAA
+  for(i in 1:length(combinames)){
+    dfAA[[1]][[i]]<-apply(variantAAtable[[loci]][c(TRUE, FALSE)][strsplit(combinames, ":")[[i]]][,cols], 1, paste, collapse = "~")
+    dfAA[[2]][[i]]<-apply(variantAAtable[[loci]][c(FALSE, TRUE)][strsplit(combinames, ":")[[i]]][,cols], 1, paste, collapse = "~")
+  }
+  
+  #fills into pair_df
+  combidf[,3:length(combidf)][,c(TRUE,FALSE)]<-dfAA[[1]]
+  combidf[,3:length(combidf)][,c(FALSE,TRUE)]<-dfAA[[2]]
+  
+  myData<-list("KDLO"=KDLO, "BOLO"=BOLO, "combidf"=combidf, "UMLO"=unassociated_posi, "combinames"=combinames)
+  return(myData)
+}
+
+loci="B"
+BOLO_list<-list()
+KDLO_list<-list()
+UMLO_list<-list()
+
+myData<-variantAAtable[[loci]]
+stop<-FALSE
+
+counter=0
+while(stop==FALSE){
+  print(paste(counter,"iteration(s) have been run", sep=" "))
+  interim<-combiAnalyzer(loci, myData, BOLO ,KDLO, UMLO, counter, motif_list)
+  counter=counter+1
+
+  
+  myData<-interim$combidf
+  KDLO<-KDLO_list[[counter]]<-interim$KDLO
+  BOLO<-BOLO_list[[counter]]<-interim$BOLO
+  UMLO<-UMLO_list[[counter]]<-interim$UMLO
+  
+  if(is.null(nrow(KDLO))==TRUE){
+    stop=TRUE
+    print("Maximal OR reached - end of analysis.")
+  }
+  
+  if((is.null(nrow(KDLO))==FALSE) & (length(motif_list)!=counter)){
+    print("Dataset is able to be further analyzed - moving on to next iteration.")
+  }
+  
+  if((is.null(nrow(KDLO))==FALSE) & length(motif_list)==counter){
+    print("WARNING: end of motif_list analysis, but further analysis is possible.")
+    stop=TRUE
+  }
+  
+  if((is.null(nrow(KDLO))==TRUE) & length(motif_list)==counter){
+    print("End of motif_list analysis - maximal OR has been reached.")}
+  
+}
+
+
