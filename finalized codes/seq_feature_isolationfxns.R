@@ -368,7 +368,7 @@ BDStrat <- function(dataset,locus,alleles){
 
 ####EXAMPLES
 
-
+BDgenotypeconversion("MS_EUR.txt", "Allelelist.3310.txt", )
 ##tests out customGFEgenerator
 #"/Users/liviatran/Desktop/ltmasterscoding/HLA" is a list of BSG files for all HLA loci 
 custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/HLA", columnnames = c("allelename", "gfe"), skip=3, clip=1)
@@ -377,7 +377,7 @@ custom_mergeddata<-customGFEgenerator("/Users/liviatran/Desktop/ltmasterscoding/
 save(custom_mergeddata,file="custom_mergeddata.rda")
 
 #tests out BIGDAWGGFEanalyzer
-BIGDAWG_GFEanalyzer("MS_EUR.txt","Allelelist.3310.txt")
+BIGDAWG_GFEanalyzer("MS_EUR.txt","Allelelist.3310.txt", mapname = "threeUTR")
 
 #stratifies HLA_data to negatively and positively associated MS alleles
 stratified<-(BDStrat("MS_EUR.txt","DRB1","15:01"))
@@ -386,7 +386,8 @@ stratified<-(BDStrat("MS_EUR.txt","DRB1","15:01"))
 #GFE notations followed by analysis by BIGDAWG
 for(i in 1:length(stratified)){
 cat(paste("*** Analyzing",names(stratified[i]),"dataset ***","\n",sep=""))
-BIGDAWG_GFEanalyzer(stratified[[i]], "Allelelist.3310.txt")}
+BIGDAWG_GFEanalyzer(stratified[[i]], "Allelelist.3310.txt", mapname="threeUTR")}
 
 
+View(stratified[[1]])
 

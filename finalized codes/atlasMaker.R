@@ -43,7 +43,7 @@ atlasMaker <- function(frame=framework){
                        7, 7, 7)
   
   
-  atlas$exon4_cdomain<-list(8, 8, 8, 8,
+  atlas$exon4<-list(8, 8, 8, 8,
                             8, 8, 8, 8,
                             8,8,8)
   
@@ -115,4 +115,4 @@ atlasMaker <- function(frame=framework){
 atlas<-atlasMaker(framework)
 
 #option to save as .rdafile
-save(atlas, file="atlas2.0.rda")
+save(atlas, file="atlas.rda")

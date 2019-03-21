@@ -43,3 +43,5 @@ AA_atlas[[loci[[6]]]]$bound<-list(34, 122, 216, 253)
 
 save(AA_atlas, file="AA_atlas.rda")
                                   
+load("AA_atlas.rda")
+View(AA_atlas[[1]])

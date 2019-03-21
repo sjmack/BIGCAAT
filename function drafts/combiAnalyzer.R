@@ -2,6 +2,8 @@
 #by:Livia Tran 
 #v 1.2
 
+require(BIGDAWG)
+require(gtools)
 
 motif_list<-NULL
 
@@ -12,7 +14,7 @@ combiAnalyzer<-function(loci, myData, KDLO, BOLO, UMLO, counter, motif_list){
   #specifies a default motif list if one is not provided 
   if((is.null(motif_list)==TRUE)&(counter==0)){
     motif_list<-c(0,2,3,4,5,6,7)
-    print(paste("Motif list has not been provided - default list will be used."))
+    print(paste("Motif list has not been provided - function will run until maximal OR is reached"))
   }
   
   #BIGDAWG analysis 
@@ -260,6 +262,7 @@ loci="C"
 BOLO_list<-list()
 KDLO_list<-list()
 UMLO_list<-list()
+motif_list<-NULL
 
 myData<-variantAAtable[[loci]]
 stop<-FALSE
@@ -294,4 +297,6 @@ while(stop==FALSE){
     print("End of motif_list analysis - maximal OR has been reached.")}
   
 }
+
+
 

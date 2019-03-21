@@ -111,8 +111,8 @@ variantAAextractor<-function(loci,genotypefiles){
   start<-end<-alignment<-list()
   
   #creates empty variables where each element is named after the used loci 
-  
-  #empty variables for correspondence table 
+
+    #empty variables for correspondence table 
   corr_table<-cols<-downloaded_segments<-w<-alignment_positions<-alignment_length<-alignment_start<-prot_extractions<-refblock_number<-end_char<-space_diff<-
     
     #empty variables for exon_extractor function   
@@ -161,33 +161,7 @@ variantAAextractor<-function(loci,genotypefiles){
       
       #determines the alignment start by adding -30 to the difference between white spaces found above 
       alignment_start[[loci[i]]]<-refblock_number[[loci[i]]][1]+space_diff[[loci[i]]]
-      
-      #determines alignment length based on the last Prot enumeration + the number of characters in the last row 
-      alignment_length[[loci[i]]]<-as.numeric(tail(refblock_number[[loci[i]]], 1))+end_char[[loci[i]]]}
-    
-    
-    #pastes alignment_start to alignment_length together in sequential order, with inDels accounted for 
-    #captures output as "w"
-    if(loci[[i]]=="A"){
-      w$A<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
-    if(loci[[i]]=="B"){
-      w$B<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
-    if(loci[[i]]=="C"){
-      w$C<-capture.output(cat(alignment_start[[loci[i]]]:(as.numeric(tail(refblock_number[[loci[i]]],1))-(alignment_start[[loci[i]]])), paste("inDel", seq(1:6), sep=""), (as.numeric(tail(refblock_number[[loci[i]]],1))-alignment_start[[loci[i]]]+1):alignment_length[[loci[i]]]))}
-    if(loci[[i]]=="DRB1"){
-      w$DRB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
-    if(loci[[i]]=="DQB1"){
-      w$DQB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
-    if(loci[[i]]=="DPB1"){
-      w$DPB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
-    
-        #splits string formed by cat for separate character variables
-    alignment_positions[[loci[i]]]<-as.character(unlist(strsplit(w[[loci[i]]], " ")))
-    
-    
-    #eliminates "0", as the alignment sequence from ANHIG does not contain 0
-    alignment_positions[[loci[i]]]<-alignment_positions[[loci[i]]][-which(alignment_positions[[loci[i]]] == 0)]
-    
+    }
     
     #closes all white space in the alignment file, except for the white space separating the allele and peptide sequence
     alignment[[loci[i]]] <-paste(substr(alignment[[loci[i]]],1,regexpr(" ",text = alignment[[loci[i]]],fixed = TRUE)), gsub(" ","",substr(alignment[[loci[i]]],regexpr(" ",text = alignment[[loci[i]]],fixed = TRUE),nchar(alignment[[loci[i]]]))),sep = "")
@@ -236,6 +210,31 @@ variantAAextractor<-function(loci,genotypefiles){
     #contains actual sequence information
     corr_table[[loci[i]]][1,]<-(1:as.numeric(nchar(AA_segments[[loci[i]]][,2][1])))
     
+    ##modify this
+    #determines alignment length based on the total number of characters plus the alignment start (which is negative ) 
+    alignment_length[[loci[i]]]<-as.numeric(nchar(AA_segments[[loci[i]]][,2][1]))+alignment_start[[loci[[i]]]]
+    
+    #pastes alignment_start to alignment_length together in sequential order, with inDels accounted for 
+    #captures output as "w"
+    if(loci[[i]]=="A"){
+      w$A<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    if(loci[[i]]=="B"){
+      w$B<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    if(loci[[i]]=="C"){
+      w$C<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    if(loci[[i]]=="DRB1"){
+      w$DRB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    if(loci[[i]]=="DQB1"){
+      w$DQB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    if(loci[[i]]=="DPB1"){
+      w$DPB1<-capture.output(cat(alignment_start[[loci[i]]]:alignment_length[[loci[i]]]))}
+    
+    #splits string formed by cat for separate character variables
+    alignment_positions[[loci[i]]]<-as.character(unlist(strsplit(w[[loci[i]]], " ")))
+    
+    #eliminates "0", as the alignment sequence from ANHIG does not contain 0
+    alignment_positions[[loci[i]]]<-alignment_positions[[loci[i]]][-which(alignment_positions[[loci[i]]] == 0)]
+    
     #contains alignment sequence information 
     corr_table[[loci[i]]][2,]<-alignment_positions[[loci[i]]]
     
@@ -281,8 +280,8 @@ variantAAextractor<-function(loci,genotypefiles){
       AA_segments[[loci[i]]][,k][which(AA_segments[[loci[i]]][,k]=="-")] <- AA_segments[[loci[i]]][,k][1]}  
     
     
-    #for loop for subsetting AA_sequences by matching exon start and end cells from AA_atlas
-    #column names of AA_sequences, which are AA positions
+    #for loop for subsetting AA_segments by matching exon start and end cells from AA_atlas
+    #column names of AA_segments, which are AA positions
     #subsets relevant amino acids, inputting them into a list
     #binds previous columns with locus, allele, trimmed allele, and allele name information
     
@@ -311,7 +310,6 @@ variantAAextractor<-function(loci,genotypefiles){
     #subsets last exon for loci 
     exonlist[[loci[i]]][[nrow(AA_atlas[[match(loci[[i]],names(AA_atlas))]])+1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][match(AA_atlas[[match(loci[[i]],names(AA_atlas))]][[2]][[length(AA_atlas[match(loci[[i]],names(AA_atlas))][[loci[i]]][[2]])]]:names(AA_segments[[loci[i]]][ncol(AA_segments[[loci[i]]])]), colnames(AA_segments[[loci[i]]]))])
     
-    
     #subsets N-1 exons 
     for(j in 1:(nrow(AA_atlas[[match(loci[i],names(AA_atlas))]])-1)){
       exonlist[[loci[i]]][[j+1]]<-cbind(AA_segments[[loci[i]]][,1:4], AA_segments[[loci[i]]][,match(AA_atlas[match(loci[i],names(AA_atlas))][[loci[i]]][[2]][[j]], colnames(AA_segments[[loci[i]]])):match(as.numeric(AA_atlas[match(loci[i],names(AA_atlas))][[loci[i]]][[2]][[j+1]]),colnames(AA_segments[[loci[i]]]))])}
@@ -334,7 +332,7 @@ variantAAextractor<-function(loci,genotypefiles){
     geno_exonlist[[loci[i]]]<-sapply(exonlist[[loci[i]]], function(x) NULL)
     
     #reads in 3310 HLA alleles 
-    HLA_alleles<-read.csv("Allelelist.3310.txt", header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
+    HLA_alleles<-read.csv("Allelelist.3340.txt", header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
     
     #compiles a list of CWD alleles and inserts them into a new variable
     CWDalleles<-CWDverify()
@@ -454,21 +452,15 @@ variantAAextractor<-function(loci,genotypefiles){
     for(u in 1:length(gdata[loci[[i]]==colnames(gdata)])){
       for(s in 1:length(variantAApositions[[loci[[i]]]])){
         mastertable[[loci[[i]]]][names(variantAApositions[[loci[[i]]]][[s]][2]) == names(mastertable[[loci[[i]]]])][[u]]<-variantAApositions[[loci[[i]]]][[s]][,2][match(gdata[loci[[i]]==colnames(gdata)][[u]], variantAApositions[[loci[[i]]]][[s]][,1])]
-      }}}
+      }}
+  }
   return(mastertable)
-
-}
   
-##END variantAA_extractor function script 
+}
 
-###example use of variantAAextractor -- saves to variable called variantAAtable
-variantAAtable<-variantAAextractor(loci=c("A", "B", "C", "DPB1", "DQB1", "DRB1"), genotypefiles = "MS_EUR.txt")
+variantAAtable<-variantAAextractor(loci=c("A", "B", "C"), genotypefiles = "MS_EUR.txt")
 
-#defines loci for BIGDAWG analysis iteraton0 results 
-loci=c("A", "B", "C", "DPB1", "DQB1", "DRB1")
 
-iteration0<-sapply(loci, function(x) NULL)
-
-#runs BIGDAWG on all loci 
-for(i in 1:length(variantAAtable)){
-iteration0[[loci[[i]]]]<-BIGDAWG(variantAAtable[[i]], HLA=F, Run.Tests="L", Missing = "ignore", Return=T, Output = F)}
+View(variantAAtable)
+View(variantAAtable[[1]])
+View(AA_segments[[1]])
