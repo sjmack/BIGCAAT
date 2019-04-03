@@ -1,0 +1,9 @@
+SampleSize: 305
+No.Controls: 82
+No.Cases: 223
+AlleleCount: 610
+TotalLoci: 6
+Loci: A, C, B, DRB1, DQB1, DPB1
+AllelePerLocus: 4, 7, 7, 12, 11, 6
+MissingPerLocus: 0, 0, 0, 0, 0, 0
+SetRes: Not Defined

@@ -1,0 +1,9 @@
+SampleSize: 830
+No.Controls: 419
+No.Cases: 411
+AlleleCount: 1660
+TotalLoci: 1
+Loci: 33:48:91:101:140:180:187
+AllelePerLocus: 43
+MissingPerLocus: 0
+SetRes: Not Defined

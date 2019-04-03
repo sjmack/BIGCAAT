@@ -1,0 +1,2 @@
+
+Consider setting a missing threshold or running without the haplotype ('H') analysis. A large number of missing data in the haplotype analysis will affect performance, require large amounts of RAM, cause long wait times, and in the worst case crash your computer.

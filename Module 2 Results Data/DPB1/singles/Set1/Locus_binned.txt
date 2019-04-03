@@ -1,0 +1,2 @@
+Locus	Allele	Group.0	Group.1
+98:105	Nothing.binned	NA	NA

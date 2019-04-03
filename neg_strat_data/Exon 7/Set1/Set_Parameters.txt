@@ -1,0 +1,2 @@
+Set: Set 1
+Loci.Run: A,C,B,DRB1,DQB1,DPB1

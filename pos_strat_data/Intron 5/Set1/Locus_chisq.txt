@@ -1,0 +1,7 @@
+Locus	X.square	df	p.value	sig
+A	3.6974	8	0.88334	NS
+C	3.7512	5	0.58577	NS
+B	5.356	8	0.71894	NS
+DRB1	7.1015	7	0.41839	NS
+DQB1	6.848	6	0.33513	NS
+DPB1	NCalc	NCalc	NCalc	NCalc
