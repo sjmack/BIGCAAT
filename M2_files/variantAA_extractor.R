@@ -97,7 +97,7 @@ load("AA_atlas.rda")
   variantAAextractor<-function(loci,genotypefiles){
     
   #reads in genotype data  
-  gdata<-read.table("MS_EUR.txt", sep="\t", header=T, check.names = F, stringsAsFactors = F)
+  gdata<-read.table(genotypefiles, sep="\t", header=T, check.names = F, stringsAsFactors = F)
   
   #sets blank cells to NA 
   #if cells do not contain NA, locus names are pasted to the allele in the MS_file
