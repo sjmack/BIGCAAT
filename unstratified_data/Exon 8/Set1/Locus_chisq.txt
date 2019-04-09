@@ -1,0 +1,7 @@
+Locus	X.square	df	p.value	sig
+A	NCalc	NCalc	NCalc	NCalc
+C	0	1	1	NS
+B	NCalc	NCalc	NCalc	NCalc
+DRB1	NCalc	NCalc	NCalc	NCalc
+DQB1	NCalc	NCalc	NCalc	NCalc
+DPB1	NCalc	NCalc	NCalc	NCalc

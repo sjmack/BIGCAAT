@@ -1,0 +1,8 @@
+Locus	Allele	OR	CI.lower	CI.upper	p.value	sig
+A	HLA-Aw0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-1-0	NCalc	NCalc	NCalc	NCalc	NCalc
+C	HLA-Cw0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0	1.02	0.01	80.07	0.98912	NS
+C	HLA-Cw0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-1-0	0.98	0.01	77.05	0.98912	NS
+B	HLA-Bw0-0-0-0-0-0-0-0-0-0-0-0-0-0-0	NCalc	NCalc	NCalc	NCalc	NCalc
+DRB1	HLA-DRB1w0-0-0-0-0-0-0-0-0-0-0-0-0	NCalc	NCalc	NCalc	NCalc	NCalc
+DQB1	HLA-DQB1w0-0-0-0-0-0-0-0-0-0-0-0-0	NCalc	NCalc	NCalc	NCalc	NCalc
+DPB1	HLA-DPB1w0-0-0-0-0-0-0-0-0-0-0	NCalc	NCalc	NCalc	NCalc	NCalc

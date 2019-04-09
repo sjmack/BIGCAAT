@@ -51,8 +51,6 @@
 ###atlas2.0.rda is a dataframe that gives the position for selected features in a GFE as well as individual features
 load("/Users/liviatran/ltmasterscoding/framework.rda")
 load("/Users/liviatran/ltmasterscoding/atlas2.0.rda")
-load("/Users/liviatran/ltmasterscoding/cwdalleles.rda")
-
 
 #stringr package is necessary for str_replace_all function
 require(stringr)
@@ -118,14 +116,13 @@ filemerge <- function(filepath, columnnames, skip, clip){
 #for identifying CWD alleles and identifying each allele's unique allele ID 
 ##optional usage for alleles with CWD alleles (i.e. HLA)
 #users looking at other genes that do not have CWD documentation need not use this function
-cwdID <- function(allelelistFile, gfefiles) {
+cwdID <- function(allelelistFile,gfeDirPath) {
   hlaacc<-read.csv(allelelistFile, header=TRUE, stringsAsFactors = FALSE, skip=6,sep=",")
-  hladf<-gfefiles
+  hladf<-filemerge(gfeDirPath, c("allelename", "gfe"), skip=3, clip=1)
   hladf$alleleID<-hlaacc$AlleleID[match(hladf$allelename, paste("HLA",hlaacc$Allele,sep="-"))] 
   cwdalleles<-CWDverify()
   hladf$CWD<-ifelse(hladf$alleleID %in% cwdalleles$Accession, "CWD", "NON-CWD")
   return(hladf)}
-
 
 ##function for reading all BSG files in, combines them into a single, multi-locus dataframe
 multiFileread <- function(filepath, columnnames, skip, clip){
